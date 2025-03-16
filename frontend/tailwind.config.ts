@@ -16,6 +16,7 @@ export default {
         primary: "#c1e8ef36",
         secondary: "#43c2d1",
         tertiary: "#272626",
+        deep:"#072A6C",
         gray: {
           10: "#EEEEEE",
           20: "#A2A2A2",
@@ -31,8 +32,8 @@ export default {
       "4xl": "2200px",
     },
     backgroundImage: {
-      hero: "url(/src/assets/bg.png)",
-      banner: "url(/src/assets/banner.png)",
+      hero: "url(/src/assets/assets/bg.png)",
+      banner: "url(/src/assets/assets/banner.png)",
     }
   },
   plugins: [],
