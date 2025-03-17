@@ -10,11 +10,14 @@ const ShopContextProvider = (props) => {
   const currency = "GHS";
   const delivery_charges = 10;
   const navigate = useNavigate();
+  const [search, setSearch] = useState("")
+  const [ShowSearch, setShowSearch] = useState(true)
+  const [token, setToken] =useState('')
 
   const [products, setProducts] = useState(initialProducts); // Use renamed variable
 
   // Value to be provided by the context
-  const value = { currency, delivery_charges, navigate, products, setProducts };
+  const value = { currency, delivery_charges, navigate, products, setProducts, token, setToken, search, setSearch, ShowSearch, setShowSearch};
 
   return (
     <ShopContext.Provider value={value}>

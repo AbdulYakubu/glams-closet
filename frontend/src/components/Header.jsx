@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from './Navbar';
 import { FaBarsStaggered } from 'react-icons/fa6';
 import { FaSearch } from 'react-icons/fa';
 import { TbBasket, TbHeart, TbUserCircle } from 'react-icons/tb';
 import { RiUserLine } from 'react-icons/ri';
+import { ShopContext } from '../context/ShopContext';
 
 const Header = () => {
-  const [token, setToken] = useState('');
+  const {token} = useContext(ShopContext)
   const [menuOpened, setMenuOpened] = useState(false);
 
   const toggleMenu = () => setMenuOpened((prev) => !prev);
