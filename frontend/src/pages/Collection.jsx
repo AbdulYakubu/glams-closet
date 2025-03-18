@@ -68,7 +68,7 @@ const Collection = () => {
 
   return (
     <div className="max-padd-container !px-0">
-      <div className="flex sm:flex-row gap-8 mb-16">
+      <div className="flex flex-col xs:flex-row gap-8 mb-16">
         {/* Filter options */}
         <div className="min-w-72 bg-primary p-4 pt-8 pl-6 lg:pl-12 rounded-r-xl">
           <ShowSearch setSearch={setSearch} /> {/* Pass setSearch to update search state */}
@@ -119,7 +119,7 @@ const Collection = () => {
 
         {/* Right side */}
         <div className='bg-primary p-4 rounded-l-xl'>
-          <div className='grid grid-cols-5 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 gap-y-6'>
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xs:grid-cols-5 gap-4 gap-y-6'>
             {getPaginatedProducts().length > 0 ? (
               getPaginatedProducts().map((product) => (
                 <Item key={product.id} product={product} /> // Added missing return
