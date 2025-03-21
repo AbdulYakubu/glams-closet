@@ -10,6 +10,7 @@ import Cart from './pages/Cart'
 import Wishlist from './pages/Wishlist'
 import { ToastContainer} from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import PlaceOrder from './pages/PlaceOrder'
 
 const App = () => {
   return (
@@ -24,6 +25,7 @@ const App = () => {
         <Route path='/product/:productId' element={<Product />} />
         <Route path='/cart' element={<Cart/>} />
         <Route path="/wishlist" element={<Wishlist />} />
+        <Route path='/place-order' element={ <PlaceOrder/>} />
         
       </Routes>
     </main>
