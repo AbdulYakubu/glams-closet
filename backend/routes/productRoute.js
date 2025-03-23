@@ -5,7 +5,7 @@ import adminAuth from "../middleware/adminAuth.js";
 
 const productRouter = express.Router();
 
-// Add product (ensure no trailing comma)
+// Add product 
 productRouter.post(
   "/add",
   adminAuth,
