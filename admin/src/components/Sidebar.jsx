@@ -14,7 +14,7 @@ const Sidebar = () => {
         <div>
           <NavLink>
             <FaSquarePlus/>
-            <div>Add Item</div>
+            <div className='text-5xl'>Add Item</div>
           </NavLink>
           <div>
             <button>
