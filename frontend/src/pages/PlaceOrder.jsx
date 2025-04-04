@@ -112,7 +112,7 @@ const PlaceOrder = () => {
                       method === "cod" ? "btn-dark" : "btn-white"
                     } !py-1 text-xs cursor-pointer`}
                   >
-                    Cash On Delivery
+                    Bank Transfer
                   </div>
                 </div>
               </div>
