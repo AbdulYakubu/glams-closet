@@ -1,36 +1,79 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react';
 import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css'
+import 'react-toastify/dist/ReactToastify.css';
+import { Route, Routes, useNavigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
-import { Route, Routes } from 'react-router-dom'
 import Add from './pages/Add';
 import List from './pages/List';
 import Orders from './pages/Orders';
 import Login from './components/Login';
+import ProtectedRoute from './components/ProtectedRoute';
+
+// Constants
+export const backend_url = import.meta.env.VITE_BACKEND_URL;
+export const currency = "GHS";
+const AUTH_TOKEN_KEY = 'auth_token';
 
 const App = () => {
+  const [token, setToken] = useState('');
+  const navigate = useNavigate();
 
-const [token, setToken] = useState("dummyToken")
+  // Initialize token from localStorage
+  useEffect(() => {
+    const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
+    if (storedToken) {
+      // Add token validation here if needed
+      setToken(storedToken);
+    }
+  }, []);
+
+  // Sync token to localStorage
+  useEffect(() => {
+    if (token) {
+      localStorage.setItem(AUTH_TOKEN_KEY, token);
+    } else {
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      navigate('/'); // Redirect to home when logging out
+    }
+  }, [token, navigate]);
+
+  const handleLogout = () => {
+    setToken('');
+  };
 
   return (
-    <main>
-      <ToastContainer />
-      {token === "" ? (
-        <Login setToken={setToken}/>
-      ):(
-      <div className='bg-primary text-[#404040]'>
-        <div >
-          <Sidebar setToken={setToken} />
-          <Routes>
-                <Route path='/' element={<Add token={ token} />} />
-                <Route path='/list' element={<List token={ token} />} />
-                <Route path='/orders' element={<Orders token={ token} /> } />
-          </Routes>
+    <main className="min-h-screen">
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+      
+      {!token ? (
+        <Login setToken={setToken} />
+      ) : (
+        <div className='bg-[#c1e8ef36] text-[#404040]'>
+          <div className='mx-auto max-w-[1440px] flex flex-col sm:flex-row'>
+            <Sidebar onLogout={handleLogout} />
+            
+            <Routes>
+              <Route element={<ProtectedRoute token={token} />}>
+                <Route path='/' element={<Add token={token} />} />
+                <Route path='/list' element={<List token={token} />} />
+                <Route path='/orders' element={<Orders token={token} />} />
+              </Route>
+            </Routes>
+          </div>
         </div>
-      </div>
-        )}
+      )}
     </main>
-  )
-}
+  );
+};
 
-export default App
+export default App;
