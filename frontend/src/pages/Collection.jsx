@@ -1,19 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import ShowSearch from '../components/ShowSearch';
-import { products } from '../assets/assets/data';
 import Item from '../components/Item';
 import Footer from '../components/Footer';
+import { ShopContext } from '../context/ShopContext';
 
 const Collection = () => {
+  const { products, loading } = useContext(ShopContext); // ✅ use dynamic products
   const [category, setCategory] = useState([]);
   const [subCategory, setSubCategory] = useState([]);
   const [sortType, setSortType] = useState('relevant');
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [search, setSearch] = useState(''); // Added missing search state
+  const [search, setSearch] = useState('');
   const itemsPerPage = 10;
 
-  // Function to handle category and subcategory selection
   const toggleFilter = (value, setState) => {
     setState((prev) =>
       prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
@@ -32,7 +32,7 @@ const Collection = () => {
     if (category.length) {
       filtered = filtered.filter((product) => category.includes(product.category));
     }
-    
+
     if (subCategory.length) {
       filtered = filtered.filter((product) => subCategory.includes(product.subCategory));
     }
@@ -52,11 +52,13 @@ const Collection = () => {
   };
 
   useEffect(() => {
-    let filtered = applyFilter();
-    let sorted = applySorting(filtered);
-    setFilteredProducts(sorted);
-    setCurrentPage(1); // Reset to the first page when filters change
-  }, [category, subCategory, sortType, search]); // Removed `products` from dependencies
+    if (!loading) {
+      const filtered = applyFilter();
+      const sorted = applySorting(filtered);
+      setFilteredProducts(sorted);
+      setCurrentPage(1);
+    }
+  }, [category, subCategory, sortType, search, products, loading]);
 
   const getPaginatedProducts = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -66,12 +68,30 @@ const Collection = () => {
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
 
+  const resetFilters = () => {
+    setCategory([]);
+    setSubCategory([]);
+    setSearch('');
+    setSortType('relevant');
+  };
+
+  if (loading) return <div className="text-center py-16">Loading products...</div>;
+
   return (
     <div className="max-padd-container !px-0">
       <div className="flex flex-col xs:flex-row gap-8 mb-16">
         {/* Filter options */}
         <div className="min-w-72 bg-primary p-4 pt-8 pl-6 lg:pl-12 rounded-r-xl">
-          <ShowSearch setSearch={setSearch} /> {/* Pass setSearch to update search state */}
+          <ShowSearch setSearch={setSearch} />
+          {/* Clear search button */}
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="text-red-500 mt-2"
+            >
+              Clear search
+            </button>
+          )}
           <div className='pl-5 py-3 mt-4 bg-white rounded-xl'>
             <h5 className='h5 mb-4'>Categories</h5>
             <div className='flex flex-col gap-2 text-sm font-light'>
@@ -111,18 +131,25 @@ const Collection = () => {
               className='border border-slate-900/5 outline-none text-gray-30 medium-14 h-8 w-full rounded px-2'
             >
               <option value="relevant">Relevant</option>
-              <option value="Low">Low</option> {/* Fixed case sensitivity */}
-              <option value="High">High</option> {/* Fixed case sensitivity */}
+              <option value="Low">Low</option>
+              <option value="High">High</option>
             </select>
           </div>
+          {/* Clear all filters button */}
+          <button 
+            onClick={resetFilters}
+            className="mt-4 text-sm text-blue-500"
+          >
+            Clear all filters
+          </button>
         </div>
 
         {/* Right side */}
         <div className='bg-primary p-4 rounded-l-xl'>
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xs:grid-cols-5 gap-4 gap-y-6'>
             {getPaginatedProducts().length > 0 ? (
-              getPaginatedProducts().map((product) => (
-                <Item key={product.id} product={product} /> // Added missing return
+              getPaginatedProducts().map((product, index) => (
+                <Item key={product.id || index} product={product} /> 
               ))
             ) : (
               <p className='capitalize'>No products found for selected filters.</p>

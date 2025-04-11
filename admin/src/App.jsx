@@ -16,26 +16,29 @@ const AUTH_TOKEN_KEY = 'auth_token';
 
 const App = () => {
   const [token, setToken] = useState('');
+  const [hasMounted, setHasMounted] = useState(false);
   const navigate = useNavigate();
 
   // Initialize token from localStorage
   useEffect(() => {
     const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
     if (storedToken) {
-      // Add token validation here if needed
       setToken(storedToken);
     }
+    setHasMounted(true); // Mark as mounted after checking localStorage
   }, []);
 
-  // Sync token to localStorage
+  // Sync token to localStorage and handle logout redirect
   useEffect(() => {
+    if (!hasMounted) return;
+
     if (token) {
       localStorage.setItem(AUTH_TOKEN_KEY, token);
     } else {
       localStorage.removeItem(AUTH_TOKEN_KEY);
-      navigate('/'); // Redirect to home when logging out
+      navigate('/'); // Redirect only after initial mount
     }
-  }, [token, navigate]);
+  }, [token, hasMounted, navigate]);
 
   const handleLogout = () => {
     setToken('');
@@ -54,14 +57,14 @@ const App = () => {
         draggable
         pauseOnHover
       />
-      
+
       {!token ? (
         <Login setToken={setToken} />
       ) : (
         <div className='bg-[#c1e8ef36] text-[#404040]'>
           <div className='mx-auto max-w-[1440px] flex flex-col sm:flex-row'>
             <Sidebar onLogout={handleLogout} />
-            
+
             <Routes>
               <Route element={<ProtectedRoute token={token} />}>
                 <Route path='/' element={<Add token={token} />} />

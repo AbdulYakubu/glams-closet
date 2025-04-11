@@ -8,7 +8,7 @@ import { RiUserLine } from 'react-icons/ri';
 import { ShopContext } from '../context/ShopContext';
 
 const Header = () => {
-  const { token, getCartCount, getWishlistCount, navigate, } = useContext(ShopContext);
+  const { token, setToken, getCartCount, getWishlistCount, navigate, } = useContext(ShopContext);
   const [menuOpened, setMenuOpened] = useState(false);
 
   // Ensure cart and wishlist counts always return numbers
@@ -18,7 +18,9 @@ const Header = () => {
   const toggleMenu = () => setMenuOpened((prev) => !prev);
 
   const logout = () => {
-    
+    localStorage.removeItem('token')
+    setToken('')
+    navigate('/login')
   };
 
   return (

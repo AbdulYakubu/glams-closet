@@ -13,15 +13,16 @@ const RelatedProducts = ({category, subCategory}) => {
 
       filtered = filtered.filter((item) => category === item.category)
       filtered = filtered.filter((item) => subCategory === item.subCategory)
-      setRelated(filtered.slice(0,5))
+      setRelated(filtered.slice(0, 5))
     }
-  }, [products])
+  }, [products, category, subCategory]) // Added category and subCategory to the dependency array
+
   return (
     <section className='py-16'>
       <Title title1={'Related'} title2={'Products'} title1Styles={'pb-4'} />
       <div className='grid xs:grid-cols-5 grid-cols-1 md:grid-cols-5 gap-4'>
-        {related.map((product, i) => (
-          <Item key={products._id} product={product} />
+        {related.map((product) => (
+          <Item key={product._id} product={product} /> 
         ))}
       </div>
     </section>

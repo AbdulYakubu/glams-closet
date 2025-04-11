@@ -1,7 +1,7 @@
-import React, { createContext, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { products as initialProducts } from '../assets/assets/data';
-import { toast } from 'react-toastify';
+import React, { createContext, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import axios from "axios";
 
 // Create the context
 export const ShopContext = createContext();
@@ -9,18 +9,19 @@ export const ShopContext = createContext();
 const ShopContextProvider = (props) => {
   const currency = "GHS";
   const delivery_charges = 10;
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const navigate = useNavigate();
 
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [ShowSearch, setShowSearch] = useState(true);
-  const [token, setToken] = useState('dummytoken');
-  const [products, setProducts] = useState(initialProducts);
+  const [token, setToken] = useState("");
   const [cartItems, setCartItems] = useState({});
   const [wishlistItems, setWishlistItems] = useState([]);
 
-  // update cart quantity
   const updateQuantity = (itemId, size, newQuantity) => {
-    setCartItems(prevCart => {
+    setCartItems((prevCart) => {
       const updatedCart = { ...prevCart };
 
       if (!updatedCart[itemId]) {
@@ -30,48 +31,101 @@ const ShopContextProvider = (props) => {
       if (newQuantity > 0) {
         updatedCart[itemId][size] = newQuantity;
       } else {
-        delete updatedCart[itemId][size]; // Remove size entry if quantity is 0
+        delete updatedCart[itemId][size];
         if (Object.keys(updatedCart[itemId]).length === 0) {
-          delete updatedCart[itemId]; // Remove item if no sizes left
+          delete updatedCart[itemId];
         }
       }
 
       return updatedCart;
     });
-
-    // ✅ Remove from wishlist if it exists
-    setWishlistItems((prevWishlist) => {
-      if (prevWishlist.includes(itemId)) {
-        //toast.info("Item removed from wishlist as it was added to cart");
-        return prevWishlist.filter(id => id !== itemId);
-      }
-      return prevWishlist;
-    });
   };
 
-  // Add to cart
-  const addToCart = (itemId, size) => {
+  const addToCart = async (itemId, size) => {
     if (!size) {
       toast.error("Please select a size first");
       return;
     }
-    updateQuantity(itemId, size, (cartItems[itemId]?.[size] || 0) + 1);
+
+    const updatedCart = { ...cartItems };
+    if (updatedCart[itemId]) {
+      updatedCart[itemId][size] = (updatedCart[itemId][size] || 0) + 1;
+    } else {
+      updatedCart[itemId] = { [size]: 1 };
+    }
+    setCartItems(updatedCart);
+
+    if (token) {
+      try {
+        await axios.post(
+          `${backendUrl}/api/cart/add`,
+          { itemId, size },
+          { headers: { token } }
+        );
+        toast.success("Added to cart!");
+      } catch (error) {
+        console.error(
+          "Add to cart error:",
+          error.response?.data || error.message
+        );
+        toast.error(error.response?.data?.message || "Failed to add to cart");
+      }
+    }
   };
 
-  // Get Cart count
+  const updateWishlist = async (itemId) => {
+    const updatedWishlist = [...wishlistItems];
+    const index = updatedWishlist.indexOf(itemId);
+
+    if (index === -1) {
+      updatedWishlist.push(itemId);
+      setWishlistItems(updatedWishlist);
+
+      if (token) {
+        try {
+          await axios.post(
+            `${backendUrl}/api/wishlist/add`,
+            { itemId },
+            { headers: { token } }
+          );
+          toast.success("Added to wishlist!");
+        } catch (error) {
+          console.error("Add to wishlist error:", error);
+          toast.error("Failed to update wishlist");
+        }
+      }
+    } else {
+      updatedWishlist.splice(index, 1);
+      setWishlistItems(updatedWishlist);
+
+      if (token) {
+        try {
+          await axios.post(
+            `${backendUrl}/api/wishlist/remove`,
+            { itemId },
+            { headers: { token } }
+          );
+          toast.info("Removed from wishlist.");
+        } catch (error) {
+          console.error("Remove from wishlist error:", error);
+          toast.error("Failed to update wishlist");
+        }
+      }
+    }
+  };
+
+  const getWishlistCount = () => wishlistItems.length;
+
   const getCartCount = () => {
     let totalCount = 0;
     for (const items in cartItems) {
       for (const item in cartItems[items]) {
-        if (cartItems[items][item] > 0) {
-          totalCount += cartItems[items][item];
-        }
+        totalCount += cartItems[items][item];
       }
     }
     return totalCount;
   };
 
-  // Get Cart total amount
   const getCartAmount = () => {
     let totalAmount = 0;
     for (const itemId in cartItems) {
@@ -85,29 +139,79 @@ const ShopContextProvider = (props) => {
     return totalAmount;
   };
 
-  // Add/Remove from Wishlist
-  const updateWishlist = (itemId) => {
-    setWishlistItems(prevWishlist => {
-      if (prevWishlist.includes(itemId)) {
-        //toast.info("Item removed from wishlist");
-        return prevWishlist.filter(id => id !== itemId);
+  const getProductsData = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.post(`${backendUrl}/api/product/list`);
+      if (response.data.success) {
+        setProducts(response.data.products);
       } else {
-        //toast.success("Item added to wishlist");
-        return [...prevWishlist, itemId];
+        toast.error(response.data.message);
       }
-    });
+    } catch (error) {
+      console.error("Product fetch error:", error);
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Get Wishlist count
-  const getWishlistCount = () => wishlistItems.length;
+  const getUserWishlist = async () => {
+    if (token) {
+      try {
+        const response = await axios.get(`${backendUrl}/api/wishlist`, {
+          headers: { token },
+        });
+        if (response.data.success) {
+          setWishlistItems(response.data.wishlist);
+        }
+      } catch (error) {
+        console.error("Fetch wishlist error:", error);
+        toast.error("Failed to load wishlist");
+      }
+    }
+  };
 
-  // Context value
+  const getUserCart = async () => {
+    if (token) {
+      try {
+        const response = await axios.post(
+          `${backendUrl}/api/cart/get`,
+          {},
+          { headers: { token } }
+        );
+        if (response.data.success) {
+          setCartItems(response.data.cartData || {});
+        }
+      } catch (error) {
+        console.error("Fetch cart error:", error);
+      }
+    }
+  };
+
+  // Handle token changes and fetching data
+  useEffect(() => {
+    if (!token && localStorage.getItem("token")) {
+      setToken(localStorage.getItem("token"));
+      getUserCart(localStorage.getItem("token"))
+    }
+    getProductsData();
+  }, []);
+
+  useEffect(() => {
+    if (token) {
+      getUserCart();
+      getUserWishlist();
+    }
+  }, [token]);
+
   const value = {
     currency,
     delivery_charges,
     navigate,
     products,
     setProducts,
+    loading,
     token,
     setToken,
     search,
@@ -117,16 +221,19 @@ const ShopContextProvider = (props) => {
     cartItems,
     setCartItems,
     addToCart,
-    updateQuantity, 
+    updateQuantity,
     getCartCount,
     wishlistItems,
     setWishlistItems,
     updateWishlist,
     getWishlistCount,
-    getCartAmount
+    getCartAmount,
+    backendUrl,
   };
 
-  return <ShopContext.Provider value={value}>{props.children}</ShopContext.Provider>;
+  return (
+    <ShopContext.Provider value={value}>{props.children}</ShopContext.Provider>
+  );
 };
 
 export default ShopContextProvider;
