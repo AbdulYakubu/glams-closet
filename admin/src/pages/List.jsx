@@ -50,9 +50,9 @@ const List = ({ token }) => {
   }, [])
 
   return (
-    <div className='px-2 sm:px-8 sm:mt-14'>
-      <div className='flex flex-col gap-2'>
-        <div className='grid grid-cols-[1fr_1fr_1fr_1fr_1fr] md:grid-cols-[1fr_3.5fr_1.5fr_1fr_1fr] items-center py-1 px-2 bg-white bold-14 sm:bold-15 mb-1 rounded'>
+    <div className='px-4 sm:px-8 sm:mt-14'>
+      <div className='flex flex-col gap-4'>
+        <div className='grid grid-cols-[1fr_3fr_2fr_1.5fr_1fr] items-center py-3 px-4 bg-indigo-600 text-white font-semibold rounded-lg'>
           <h5>Image</h5>
           <h5>Name</h5>
           <h5>Category</h5>
@@ -62,14 +62,14 @@ const List = ({ token }) => {
         {list.map((item) => (
           <div
             key={item._id}
-            className='grid grid-cols-[1fr_1fr_1fr_1fr_1fr] md:grid-cols-[1fr_3.5fr_1.5fr_1fr_1fr] items-center gap-2 p-1 bg-white rounded-xl'
+            className='grid grid-cols-[1fr_3fr_2fr_1.5fr_1fr] items-center gap-4 p-4 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300'
           >
-            <img className='w-12 rounded-lg' src={item.image[0]} alt="product-img" />
-            <h5 className='text-sm font-semibold'>{item.name}</h5>
-            <p className='text-sm font-semibold'>{item.category}</p>
-            <div className='text-sm font-semibold'>{currency}{item.price}</div>
-            <div onClick={() => removeProduct(item._id)}>
-              <TbTrash className='text-right md:text-center cursor-pointer text-lg text-red-500' />
+            <img className='w-16 h-16 object-cover rounded-lg border' src={item.image[0]} alt="product-img" />
+            <h5 className='text-lg font-semibold text-gray-800'>{item.name}</h5>
+            <p className='text-sm text-gray-600'>{item.category}</p>
+            <div className='text-lg font-semibold text-gray-800'>{currency}{item.price}</div>
+            <div onClick={() => removeProduct(item._id)} className='cursor-pointer hover:text-red-600'>
+              <TbTrash className='text-xl text-red-500 transition-colors duration-200' />
             </div>
           </div>
         ))}

@@ -4,6 +4,28 @@
 @tailwind components;
 @tailwind utilities;
 
+.swiper-pagination-bullet {
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 1;
+}
+
+.swiper-pagination-bullet-active {
+    background: white;
+}
+
+.swiper-button-next,
+.swiper-button-prev {
+    color: white;
+}
+.product-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
 *{
     margin: 0;
     padding: 0;

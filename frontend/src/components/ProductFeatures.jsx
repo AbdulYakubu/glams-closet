@@ -1,36 +1,77 @@
 import React from 'react'
 import { RiSecurePaymentLine } from 'react-icons/ri'
 import { TbArrowBackUp, TbTruckDelivery } from 'react-icons/tb'
+import { motion } from 'framer-motion'
+import Title from './Title' // adjust path if needed
+
+const featureItems = [
+  {
+    icon: <TbArrowBackUp className="text-2xl text-amber-600" />,
+    title: "Easy Returns",
+    description: "30-day hassle-free return policy. Change your mind? We'll make it right.",
+    color: "bg-amber-50"
+  },
+  {
+    icon: <TbTruckDelivery className="text-2xl text-rose-600" />,
+    title: "Fast Delivery",
+    description: "Express shipping available. Most orders delivered within 2-3 business days.",
+    color: "bg-rose-50"
+  },
+  {
+    icon: <RiSecurePaymentLine className="text-2xl text-indigo-600" />,
+    title: "Secure Payment",
+    description: "Industry-standard encryption protects all transactions. Shop with confidence.",
+    color: "bg-indigo-50"
+  }
+]
 
 const ProductFeatures = () => {
   return (
-    <div>
-      <section className='bg-primary rounded-xl mt-6'>
-        <div className='grid grid-cols-1  xs:grid-cols-3 gap-12 rounded-xl'>
-          <div className='flexCenter gap-x-4 p-2 rounded-3xl'>
-            <div className='text-3xl'><TbArrowBackUp  className='mb-3 text-yellow-500'/></div>
-            <div>
-              <h4 className='h4 capitalize'>Easy Return</h4>
-              <p>Lorem ipsum dolor sit amet consectetur, adipisicing elit. Dolores sequi at ipsum illo repellendus adipisci </p>
-            </div>
-          </div>
-          <div className='flexCenter gap-x-4 p-2 rounded-3xl'>
-            <div className='text-3xl'><TbTruckDelivery  className='mb-3 text-red-500'/></div>
-            <div>
-              <h4 className='h4 capitalize'>Fast Delivery</h4>
-              <p>Lorem ipsum dolor sit amet consectetur, adipisicing elit. Dolores sequi at ipsum illo repellendus adipisci </p>
-            </div>
-          </div>
-          <div className='flexCenter gap-x-4 p-2 rounded-3xl'>
-            <div className='text-3xl'><RiSecurePaymentLine  className='mb-3 text-secondary'/></div>
-            <div>
-              <h4 className='h4 capitalize'>Secure Payment</h4>
-              <p>Lorem ipsum dolor sit amet consectetur, adipisicing elit. Dolores sequi at ipsum illo repellendus adipisci </p>
-            </div>
-          </div>
+    <section className="py-12 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        {/* Section Title */}
+        <div className="mb-10 text-center">
+          <Title
+            title1="Why Shop"
+            title2="With Us"
+            titleStyles="mb-6"
+            title1Styles="text-gray-900"
+            paraStyles="text-gray-600"
+            subtitle="Enjoy a seamless shopping experience with our top-tier service guarantees."
+          />
         </div>
-      </section>
-    </div>
+
+        {/* Features Grid */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          viewport={{ once: true }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+        >
+          {featureItems.map((item, index) => (
+            <motion.div
+              key={index}
+              whileHover={{ y: -5 }}
+              className={`${item.color} p-6 rounded-xl border border-gray-100 shadow-sm transition-all duration-300 hover:shadow-md`}
+            >
+              <div className="flex items-start space-x-4">
+                <div className="p-3 rounded-lg bg-white shadow-xs">
+                  {item.icon}
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">{item.title}</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    {item.description}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
   )
 }
 

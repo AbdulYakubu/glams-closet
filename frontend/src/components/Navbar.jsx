@@ -15,8 +15,11 @@ const Navbar = ({ containerStyles, onLinkClick }) => {
         <NavLink
           key={link.title}
           to={link.path}
-          className={({ isActive }) => isActive ? "active-link" : "inactive-link"}
+          className={({ isActive }) =>
+            isActive ? "active-link transition-all duration-300" : "inactive-link transition-all duration-300"
+          }
           onClick={onLinkClick} // Close menu on link click
+          aria-label={link.title} // Accessibility for each link
         >
           {link.title}
         </NavLink>
@@ -24,4 +27,5 @@ const Navbar = ({ containerStyles, onLinkClick }) => {
     </nav>
   );
 };
+
 export default Navbar;

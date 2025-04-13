@@ -3,26 +3,29 @@ import { ShopContext } from '../context/ShopContext';
 import Title from './Title';
 
 const CartTotal = () => {
-  const { currency, cartItems, products, delivery_charges } = useContext(ShopContext);
-  
-  // Calculate cart subtotal based on item quantities
+  const { cartItems, products, delivery_charges } = useContext(ShopContext);
+
+  // Calculate cart subtotal
   const cartAmount = Object.entries(cartItems).reduce((total, [itemId, sizes]) => {
     const product = products.find((p) => p._id === itemId);
     if (!product) return total;
-    
+
     const itemTotal = Object.entries(sizes).reduce((sum, [size, quantity]) => {
       return sum + quantity * product.price;
     }, 0);
-    
+
     return total + itemTotal;
   }, 0);
 
   const shippingFee = cartAmount === 0 ? 0 : delivery_charges;
   const totalAmount = cartAmount + shippingFee;
 
-  // Function to format currency properly
-  const formatCurrency = (amount) => 
-    new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+  // Format amount using ₵ symbol and comma separators
+  const formatCurrency = (amount) =>
+    `₵${amount.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
 
   return (
     <section className="w-full max-padd-container" role="region" aria-labelledby="cart-total-title">

@@ -36,6 +36,7 @@ const Cart = () => {
           }
         }
       }
+
       setCartData(tempData);
       setQuantities(initialQuantities);
     }
@@ -59,85 +60,100 @@ const Cart = () => {
 
   return (
     <div>
-      <div className="bg-primary mb-16">
+      <div className="bg-primary pb-16">
         <div className="max-padd-container py-10">
           {/* Title */}
           <div className="flexStart gap-x-4">
-            <Title title1={"Cart"} title2={"List"} title1Styles={"h3"} />
+            <Title title1="Cart" title2="List" title1Styles="h3" />
             <h5 className="medium-15 text-gray-30 relative bottom-1.5">
               ({getCartCount()} Items)
             </h5>
           </div>
-        </div>
-        {/* Cart Items Container */}
-        <div className="mt-6">
-          {cartData.map((item, i) => {
-            const productData = products.find(
-              (product) => product._id === item._id
-            );
 
-            if (!productData) return null; // Prevent errors if productData is undefined
-
-            const key = `${item._id}-${item.size}`;
-
-            return (
-              <div className="rounded-lg bg-white p-2 mb-3" key={i}>
-                <div className="flex items-center gap-x-3">
-                  <div className="flex items-start gap-6">
-                    <img
-                      src={productData.image[0]}
-                      alt="product-image"
-                      className="w-16 sm:w-18 rounded"
-                    />
-                  </div>
-                  <div className="flex flex-col w-full">
-                    <div className="flexBetween">
-                      <h5 className="h5 !my-0 line-clamp-1">
-                        {productData.name}
-                      </h5>
-                      <FaRegWindowClose
-                        onClick={() => updateQuantity(item._id, item.size, 0)}
-                        className="cursor-pointer text-secondary"
-                      />
-                    </div>
-                    <p className="bold-14 my-0.5">{item.size}</p>
-                    <div className="flexBetween">
-                      <div className="flex items-center ring-1 ring-slate-900/5 rounded-full overflow-hidden bg-primary">
-                        <button
-                          onClick={() => decrement(item._id, item.size)}
-                          className="p-1.5 bg-white text-secondary rounded-full shadow-md"
-                        >
-                          <FaMinus className="text-xs" />
-                        </button>
-                        <p>{quantities[key] || 1}</p>
-                        <button
-                          onClick={() => increment(item._id, item.size)}
-                          className="p-1.5 bg-white text-secondary rounded-full shadow-md"
-                        >
-                          <FaPlus className="text-xs" />
-                        </button>
-                      </div>
-                      <h4 className="h4">
-                        {currency} {productData.price * (quantities[key] || 1)}
-                      </h4>
-                    </div>
-                  </div>
-                </div>
+          {/* Cart Items */}
+          <div className="mt-6">
+            {cartData.length === 0 ? (
+              <div className="text-center text-gray-500 text-sm mt-10">
+                🛒 Your cart is empty. Go add some goodies!
               </div>
-            );
-          })}
-        </div>
-        {/* Cart Total Section */}
-        <div className="flex my-20 max-padd-container">
-          <div className="w-full sm:w-[450px]">
-            <CartTotal />
-            <button
-              onClick={() => navigate("/place-order")}
-              className="btn-secondary mt-7"
-            >
-              Proceed to checkout
-            </button>
+            ) : (
+              cartData.map((item, i) => {
+                const productData = products.find(
+                  (product) => product._id === item._id
+                );
+
+                if (!productData) return null;
+
+                const key = `${item._id}-${item.size}`;
+
+                return (
+                  <div
+                    key={i}
+                    className="rounded-xl bg-white p-4 mb-4 shadow-sm hover:shadow transition"
+                  >
+                    <div className="flex gap-4 sm:gap-6 items-start">
+                      <img
+                        src={productData.image[0]}
+                        alt="product"
+                        className="w-20 sm:w-24 rounded-md object-cover"
+                      />
+                      <div className="flex flex-col w-full">
+                        <div className="flexBetween mb-1">
+                          <h5 className="h5 line-clamp-1">
+                            {productData.name}
+                          </h5>
+                          <FaRegWindowClose
+                            onClick={() => updateQuantity(item._id, item.size, 0)}
+                            className="cursor-pointer text-secondary hover:text-red-500"
+                          />
+                        </div>
+                        <p className="text-sm font-medium text-gray-600 mb-2">
+                          Size: {item.size}
+                        </p>
+                        <div className="flexBetween">
+                          <div className="flex items-center gap-2 border rounded-full bg-slate-100 px-3 py-1">
+                            <button
+                              onClick={() => decrement(item._id, item.size)}
+                              className="text-gray-700 hover:text-secondary"
+                            >
+                              <FaMinus className="text-xs" />
+                            </button>
+                            <span className="text-sm px-2">
+                              {quantities[key] || 1}
+                            </span>
+                            <button
+                              onClick={() => increment(item._id, item.size)}
+                              className="text-gray-700 hover:text-secondary"
+                            >
+                              <FaPlus className="text-xs" />
+                            </button>
+                          </div>
+                          <h4 className="h4 text-secondary">
+                            {currency} {productData.price * (quantities[key] || 1)}
+                          </h4>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
+
+          {/* Cart Total Section */}
+{cartData.length > 0 && (
+  <div className="mt-16 px-4 sm:px-0">
+    <div className="w-full sm:w-[450px] mx-auto bg-white p-5 sm:p-6 rounded-xl shadow-md">
+      <CartTotal />
+      <button
+        onClick={() => navigate("/place-order")}
+        className="btn-secondary mt-6 w-full py-3 text-sm sm:text-base"
+      >
+        Proceed to Checkout
+      </button>
+    </div>
+  </div>
+)}
         </div>
       </div>
     </div>

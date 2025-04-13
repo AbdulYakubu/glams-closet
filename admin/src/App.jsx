@@ -11,7 +11,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 // Constants
 export const backend_url = import.meta.env.VITE_BACKEND_URL;
-export const currency = "GHS";
+export const currency = "₵";
 const AUTH_TOKEN_KEY = 'auth_token';
 
 const App = () => {

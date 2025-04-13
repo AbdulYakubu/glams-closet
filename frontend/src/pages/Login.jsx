@@ -9,7 +9,7 @@ const Login = () => {
   const { token, setToken, backendUrl } = useContext(ShopContext);
   const navigate = useNavigate();
 
-  const [currState, setCurrState] = useState('Login');
+  const [currState, setCurrState] = useState('Sign Up');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -17,134 +17,120 @@ const Login = () => {
   const onSubmitHandler = async (e) => {
     e.preventDefault();
 
-    // Basic client-side validation
     if ((currState === 'Sign Up' && (!name || !email || !password)) ||
         (currState === 'Login' && (!email || !password))) {
       toast.error('Please fill all fields');
       return;
     }
 
-    console.log('Form data being submitted:', { name, email, password });
-
     try {
-      if (currState === 'Sign Up') {
-        const response = await axios.post(`${backendUrl}/api/user/register`, {
-          name,
-          email,
-          password,
-        });
+      const endpoint = currState === 'Sign Up' ? 'register' : 'login';
+      const payload = currState === 'Sign Up' ? { name, email, password } : { email, password };
 
-        if (response.data.success) {
-          setToken(response.data.token);
-          localStorage.setItem('token', response.data.token);
-        } else {
-          toast.error(response.data.message);
-        }
+      const response = await axios.post(`${backendUrl}/api/user/${endpoint}`, payload);
+
+      if (response.data.success) {
+        setToken(response.data.token);
+        localStorage.setItem('token', response.data.token);
       } else {
-        const response = await axios.post(`${backendUrl}/api/user/login`, {
-          email,
-          password,
-        });
-
-        if (response.data.success) {
-          setToken(response.data.token);
-          localStorage.setItem('token', response.data.token);
-        } else {
-          toast.error(response.data.message);
-        }
+        toast.error(response.data.message);
       }
     } catch (error) {
-      console.error('Axios Error:', error);
-      if (error.response && error.response.data) {
-        toast.error(error.response.data.message || 'An error occurred');
-      } else {
-        toast.error(error.message);
-      }
+      toast.error(error?.response?.data?.message || error.message);
     }
   };
 
   useEffect(() => {
-    if (token) {
-      navigate('/');
-    }
-  }, [token, navigate]);
+    if (token) navigate('/');
+  }, [token]);
 
   return (
-    <div className="absolute top-0 left-0 h-full w-full z-50 bg-white">
-      <div className="flex h-full w-full">
-        {/* Image Side */}
-        <div className="w-1/2 sm:hidden sm:block">
-          <img src={login} alt="login-img" className="object-cover h-full w-full" />
-        </div>
-
+    <div className="min-h-screen flex items-center justify-center bg-primary px-4 py-8">
+      <div className="flex flex-col-reverse md:flex-row w-full max-w-5xl bg-white rounded-2xl shadow-lg overflow-hidden">
         {/* Form Side */}
-        <div className="flex w-full sm:w-1/2 items-center justify-center text-[90%]">
-          <form onSubmit={onSubmitHandler} className="flex flex-col items-center w-[90%] sm:max-w-md m-auto gap-y-5">
-            <div className="w-full mb-4">
-              <h3 className="bold-36">{currState}</h3>
-            </div>
+        <div className="w-full md:w-1/2 flex items-center justify-center p-6 sm:p-10">
+          <form
+            onSubmit={onSubmitHandler}
+            className="w-full max-w-md space-y-5"
+          >
+            <h3 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
+              {currState}
+            </h3>
 
             {currState === 'Sign Up' && (
-              <div className="w-full">
-                <label htmlFor="name" className="medium-15">Name</label>
+              <div>
+                <label htmlFor="name" className="text-sm font-medium text-gray-600">Name</label>
                 <input
                   onChange={(e) => setName(e.target.value)}
                   value={name}
                   type="text"
-                  placeholder="Name"
-                  className="w-full px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-primary mt-1"
+                  placeholder="Enter your name"
+                  className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
             )}
 
-            <div className="w-full">
-              <label htmlFor="email" className="medium-15">Email</label>
+            <div>
+              <label htmlFor="email" className="text-sm font-medium text-gray-600">Email</label>
               <input
                 onChange={(e) => setEmail(e.target.value)}
                 value={email}
                 type="email"
-                placeholder="Email"
-                className="w-full px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-primary mt-1"
+                placeholder="Enter your email"
+                className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
 
-            <div className="w-full">
-              <label htmlFor="password" className="medium-15">Password</label>
+            <div>
+              <label htmlFor="password" className="text-sm font-medium text-gray-600">Password</label>
               <input
                 onChange={(e) => setPassword(e.target.value)}
                 value={password}
                 type="password"
-                placeholder="Password"
-                className="w-full px-3 py-1.5 ring-1 ring-slate-900/10 rounded bg-primary mt-1"
+                placeholder="Enter your password"
+                className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
 
-            <button type="submit" className="btn-dark w-full mt-5 !py-[8px] !rounded">
+            <button
+              type="submit"
+              className="w-full bg-black text-white py-2 rounded-md hover:bg-gray-800 transition"
+            >
               {currState === 'Sign Up' ? 'Sign Up' : 'Login'}
             </button>
 
-            <div className="w-full flex flex-col gap-y-3">
-              <div className="cursor-pointer underline medium-15">Forgot your password?</div>
+            <div className="text-sm text-gray-600 text-center">
               {currState === 'Login' ? (
-                <div className="medium-15">
-                  Don't have an account?{' '}
-                  <span onClick={() => setCurrState('Sign Up')} className="cursor-pointer underline">
-                    Create account
+                <>
+                  Don’t have an account?{' '}
+                  <span
+                    onClick={() => setCurrState('Sign Up')}
+                    className="text-blue-500 cursor-pointer underline"
+                  >
+                    Sign Up
                   </span>
-                </div>
+                </>
               ) : (
-                <div className="medium-15">
+                <>
                   Already have an account?{' '}
-                  <span onClick={() => setCurrState('Login')} className="cursor-pointer underline">
+                  <span
+                    onClick={() => setCurrState('Login')}
+                    className="text-blue-500 cursor-pointer underline"
+                  >
                     Login
                   </span>
-                </div>
+                </>
               )}
             </div>
           </form>
+        </div>
+
+        {/* Image Side */}
+        <div className="w-full md:w-1/2 xs:hidden md:block">
+          <img src={login} alt="login-img" className="object-cover w-full h-full" />
         </div>
       </div>
     </div>
