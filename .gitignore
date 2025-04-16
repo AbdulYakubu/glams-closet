@@ -16,12 +16,14 @@
 Thumbs.db
 
 # Environment variables
+# Ignore all .env files in root and any subdirectories like /frontend, /admin, etc.
 .env
 .env.local
 .env.*.local
 **/.env
 **/.env.local
 **/.env.*.local
+
 # IDE settings
 .vscode/
 .idea/
