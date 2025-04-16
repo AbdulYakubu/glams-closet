@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "axios";
 
-// Create the context
 export const ShopContext = createContext();
 
 const ShopContextProvider = (props) => {
@@ -23,11 +22,7 @@ const ShopContextProvider = (props) => {
   const updateQuantity = (itemId, size, newQuantity) => {
     setCartItems((prevCart) => {
       const updatedCart = { ...prevCart };
-
-      if (!updatedCart[itemId]) {
-        updatedCart[itemId] = {};
-      }
-
+      if (!updatedCart[itemId]) updatedCart[itemId] = {};
       if (newQuantity > 0) {
         updatedCart[itemId][size] = newQuantity;
       } else {
@@ -36,7 +31,6 @@ const ShopContextProvider = (props) => {
           delete updatedCart[itemId];
         }
       }
-
       return updatedCart;
     });
   };
@@ -60,15 +54,17 @@ const ShopContextProvider = (props) => {
         await axios.post(
           `${backendUrl}/api/cart/add`,
           { itemId, size },
-          { headers: { token } }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
         toast.success("Added to cart!");
       } catch (error) {
-        console.error(
-          "Add to cart error:",
-          error.response?.data || error.message
-        );
-        toast.error(error.response?.data?.message || "Failed to add to cart");
+        console.error("Add to cart error:", error.response?.data || error.message);
+        if (error.response?.status === 401) {
+          toast.error("Session expired. Please login again.");
+          logout();
+        } else {
+          toast.error(error.response?.data?.message || "Failed to add to cart");
+        }
       }
     }
   };
@@ -86,12 +82,11 @@ const ShopContextProvider = (props) => {
           await axios.post(
             `${backendUrl}/api/wishlist/add`,
             { itemId },
-            { headers: { token } }
+            { headers: { Authorization: `Bearer ${token}` } }
           );
           toast.success("Added to wishlist!");
         } catch (error) {
-          console.error("Add to wishlist error:", error);
-          toast.error("Failed to update wishlist");
+          handleAuthError(error);
         }
       }
     } else {
@@ -103,14 +98,23 @@ const ShopContextProvider = (props) => {
           await axios.post(
             `${backendUrl}/api/wishlist/remove`,
             { itemId },
-            { headers: { token } }
+            { headers: { Authorization: `Bearer ${token}` } }
           );
           toast.info("Removed from wishlist.");
         } catch (error) {
-          console.error("Remove from wishlist error:", error);
-          toast.error("Failed to update wishlist");
+          handleAuthError(error);
         }
       }
+    }
+  };
+
+  const handleAuthError = (error) => {
+    console.error("API error:", error);
+    if (error.response?.status === 401) {
+      toast.error("Session expired. Please login again.");
+      logout();
+    } else {
+      toast.error("Failed to update data");
     }
   };
 
@@ -131,9 +135,7 @@ const ShopContextProvider = (props) => {
     for (const itemId in cartItems) {
       for (const size in cartItems[itemId]) {
         const product = products.find((p) => p._id === itemId);
-        if (product) {
-          totalAmount += product.price * cartItems[itemId][size];
-        }
+        if (product) totalAmount += product.price * cartItems[itemId][size];
       }
     }
     return totalAmount;
@@ -142,7 +144,7 @@ const ShopContextProvider = (props) => {
   const getProductsData = async () => {
     setLoading(true);
     try {
-      const response = await axios.post(`${backendUrl}/api/product/list`);
+      const response = await axios.get(`${backendUrl}/api/product/list`);
       if (response.data.success) {
         setProducts(response.data.products);
       } else {
@@ -159,15 +161,16 @@ const ShopContextProvider = (props) => {
   const getUserWishlist = async () => {
     if (token) {
       try {
-        const response = await axios.get(`${backendUrl}/api/wishlist`, {
-          headers: { token },
-        });
+        const response = await axios.post(
+          `${backendUrl}/api/wishlist`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         if (response.data.success) {
           setWishlistItems(response.data.wishlist);
         }
       } catch (error) {
-        console.error("Fetch wishlist error:", error);
-        toast.error("Failed to load wishlist");
+        handleAuthError(error);
       }
     }
   };
@@ -178,22 +181,30 @@ const ShopContextProvider = (props) => {
         const response = await axios.post(
           `${backendUrl}/api/cart/get`,
           {},
-          { headers: { token } }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
         if (response.data.success) {
           setCartItems(response.data.cartData || {});
         }
       } catch (error) {
-        console.error("Fetch cart error:", error);
+        handleAuthError(error);
       }
     }
   };
 
-  // Handle token changes and fetching data
+  const logout = () => {
+    setToken("");
+    setCartItems({});
+    setWishlistItems([]);
+    localStorage.removeItem("token");
+    navigate("/login");
+    toast.info("Logged out successfully");
+  };
+
   useEffect(() => {
-    if (!token && localStorage.getItem("token")) {
-      setToken(localStorage.getItem("token"));
-      getUserCart(localStorage.getItem("token"))
+    const storedToken = localStorage.getItem("token");
+    if (storedToken && !token) {
+      setToken(storedToken);
     }
     getProductsData();
   }, []);
@@ -229,6 +240,7 @@ const ShopContextProvider = (props) => {
     getWishlistCount,
     getCartAmount,
     backendUrl,
+    logout,
   };
 
   return (

@@ -5,19 +5,27 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 const Orders = () => {
-  const { backendUrl, currency, token } = useContext(ShopContext);
+  const { backendUrl, currency, token, navigate } = useContext(ShopContext);
   const [orderData, setOrderData] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const loadOrderData = async () => {
     try {
       setLoading(true);
-      if (!token) return;
-      const response = await axios.post(
-        `${backendUrl}/api/order/userorders`,
-        {},
-        { headers: { token } }
-      );
+      if (!token) {
+        toast.error("Please login to view orders");
+        navigate("/login");
+        return;
+      }
+
+      console.log("Fetching Orders - URL:", `${backendUrl}/api/order/userorders`);
+      console.log("Fetching Orders - Token:", token.slice(0, 20) + "...");
+
+      const response = await axios.get(`${backendUrl}/api/order/userorders`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      console.log("Orders Response:", response.data);
 
       if (response.data.success) {
         const allItems = [];
@@ -33,10 +41,19 @@ const Orders = () => {
           });
         });
         setOrderData(allItems.reverse());
+      } else {
+        toast.error(response.data.message || "Failed to fetch orders");
       }
     } catch (error) {
-      console.error(error);
-      toast.error(error.message);
+      console.error("AxiosError:", error.response?.data || error.message);
+      if (error.response?.status === 401) {
+        toast.error("Session expired. Please login again.");
+        navigate("/login");
+      } else if (error.response?.status === 404) {
+        toast.error("Orders endpoint not found. Please contact support.");
+      } else {
+        toast.error(error.response?.data?.message || "Error fetching orders");
+      }
     } finally {
       setLoading(false);
     }

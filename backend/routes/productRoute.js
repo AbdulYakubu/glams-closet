@@ -3,10 +3,10 @@ import { addProduct, listProduct, removeProduct, singleProduct } from "../contro
 import upload from "../middleware/multer.js";
 import adminAuth from "../middleware/adminAuth.js";
 
-const productRouter = express.Router();
+const router = express.Router();
 
-// Add product 
-productRouter.post(
+// Add product (admin only)
+router.post(
   "/add",
   adminAuth,
   upload.fields([
@@ -18,13 +18,13 @@ productRouter.post(
   addProduct
 );
 
-// Remove product
-productRouter.post("/remove", adminAuth, removeProduct);
+// Remove product (admin only)
+router.post("/remove", adminAuth, removeProduct);
 
-// Get single product
-productRouter.post("/single", singleProduct);
+// Get single product (no admin restriction, adjust if needed)
+router.post("/single", singleProduct);
 
-// Get product list
-productRouter.post("/list", listProduct);
+// Get product list (no admin restriction, adjust if needed)
+router.get("/list", listProduct);
 
-export default productRouter;
+export default router;

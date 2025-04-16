@@ -7,9 +7,65 @@ import Item from '../components/Item';
 import Footer from '../components/Footer';
 import { ShopContext } from '../context/ShopContext';
 
-// Constants for better maintainability
-const CATEGORIES = ['Men', 'Women', 'Kids'];
-const SUB_CATEGORIES = ['Topwear', 'Bottomwear', 'Winterwear'];
+// Updated Constants with new categories
+const CATEGORIES = [
+  'Bags',
+  'Perfumes and Self Care Products',
+  'Egypt Abaya',
+  'Dubai Abaya',
+  'Ready to Wear',
+  'Cuft Packages',
+  'Khimars',
+  'Veils and Hijab Accessories'
+];
+
+const SUB_CATEGORIES = {
+  'Bags': [
+    'Handbags',
+    'Tote Bags',
+    'Clutches',
+    'Backpacks',
+    'Travel Bags'
+  ],
+  'Perfumes and Self Care Products': [
+    'Women\'s Perfumes',
+    'Men\'s Perfumes',
+    'Luxury Fragrances',
+    'Body Care',
+    'Hair Care'
+  ],
+  'Egypt Abaya': [
+    'Traditional',
+    'Modern',
+    'Embroidered'
+  ],
+  'Dubai Abaya': [
+    'Luxury',
+    'Designer',
+    'Open Style'
+  ],
+  'Ready to Wear': [
+    'Casual',
+    'Formal',
+    'Party Wear'
+  ],
+  'Cuft Packages': [
+    'Premium',
+    'Deluxe',
+    'Standard'
+  ],
+  'Khimars': [
+    'Traditional',
+    'Modern',
+    'Embroidered'
+  ],
+  'Veils and Hijab Accessories': [
+    'Hijabs',
+    'Under Scarves',
+    'Pins and Accessories'
+  ]
+};
+
 const SORT_OPTIONS = [
   { value: 'relevant', label: 'Recommended' },
   { value: 'Low', label: 'Price: Low to High' },
@@ -17,12 +73,13 @@ const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest Arrivals' },
   { value: 'rating', label: 'Highest Rated' }
 ];
+
 const ITEMS_PER_PAGE = 12;
 const PRICE_RANGES = [
-  { label: 'Under $25', min: 0, max: 25 },
-  { label: '$25 to $50', min: 25, max: 50 },
-  { label: '$50 to $100', min: 50, max: 100 },
-  { label: 'Over $100', min: 100, max: Infinity }
+  { label: 'Under ₵200', min: 0, max: 200 },
+  { label: '₵100 to ₵500', min: 100, max: 500 },
+  { label: '₵200 to ₵1000', min: 200, max: 1000 },
+  { label: 'Over ₵1000', min: 1000, max: Infinity }
 ];
 
 // Animation variants
@@ -104,7 +161,7 @@ const Collection = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const controls = useAnimation();
 
-  // Handle scroll for header effect
+  // Handle scroll (same as before)
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
@@ -113,7 +170,7 @@ const Collection = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Process products to ensure they all have IDs and calculate average rating
+  // Process products (same as before)
   const processedProducts = useMemo(() => {
     return products.map((product, index) => ({
       ...product,
@@ -124,11 +181,11 @@ const Collection = () => {
     }));
   }, [products]);
 
-  // Enhanced filter and sort logic
+  // Enhanced filter and sort logic with new categories
   const { filteredProducts, totalPages } = useMemo(() => {
     let filtered = [...processedProducts];
 
-    // Apply search filter with debounce effect
+    // Apply search filter
     if (filters.search) {
       const query = filters.search.toLowerCase();
       filtered = filtered.filter(p => 
@@ -142,16 +199,14 @@ const Collection = () => {
     // Apply category filters
     if (filters.category.length > 0) {
       filtered = filtered.filter(p => 
-        p.category && filters.category.some(cat => 
-          p.category.toLowerCase().includes(cat.toLowerCase()))
+        p.category && filters.category.includes(p.category)
       );
     }
 
     // Apply subcategory filters
     if (filters.subCategory.length > 0) {
       filtered = filtered.filter(p => 
-        p.subCategory && filters.subCategory.some(subCat => 
-          p.subCategory.toLowerCase().includes(subCat.toLowerCase()))
+        p.subCategory && filters.subCategory.includes(p.subCategory)
       );
     }
 
@@ -180,7 +235,6 @@ const Collection = () => {
         filtered.sort((a, b) => (b.avgRating || 0) - (a.avgRating || 0));
         break;
       default:
-        // Default sorting (relevant) with multiple factors
         filtered.sort((a, b) => {
           const popularityDiff = (b.popularity || 0) - (a.popularity || 0);
           if (popularityDiff !== 0) return popularityDiff;
@@ -188,7 +242,7 @@ const Collection = () => {
         });
     }
 
-    // Pagination with dynamic items per page
+    // Pagination
     const startIndex = (filters.page - 1) * ITEMS_PER_PAGE;
     const paginated = filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
     const total = Math.ceil(filtered.length / ITEMS_PER_PAGE);
@@ -199,17 +253,18 @@ const Collection = () => {
     };
   }, [processedProducts, filters]);
 
-  // Update filters with animation
+  // Filtter
   const updateFilter = useCallback((filterName, value) => {
     controls.start({ opacity: [1, 0.5, 1], transition: { duration: 0.3 } });
     setFilters(prev => ({
       ...prev,
       [filterName]: value,
-      page: 1 // Reset to first page when filters change
+      page: 1,
+      ...(filterName === 'category' && { subCategory: [] }) // Reset subcategory when category changes
     }));
   }, [controls]);
 
-  // Toggle specific filter value with animation
+  // Toggle filter value
   const toggleFilterValue = useCallback((filterName, value) => {
     controls.start({ scale: [1, 0.95, 1], transition: { duration: 0.2 } });
     setFilters(prev => ({
@@ -221,7 +276,7 @@ const Collection = () => {
     }));
   }, [controls]);
 
-  // Reset all filters with animation
+  // Reset filters 
   const resetFilters = useCallback(() => {
     controls.start("reset");
     setFilters({
@@ -235,7 +290,7 @@ const Collection = () => {
     });
   }, [controls]);
 
-  // Toggle mobile filters
+  // Toggle mobile filters (same as before)
   const toggleMobileFilters = useCallback(() => {
     setFilters(prev => ({
       ...prev,
@@ -243,7 +298,7 @@ const Collection = () => {
     }));
   }, []);
 
-  // Loading state with enhanced animation
+  // Loading state (same as before)
   if (loading) {
     return (
       <motion.div 
@@ -277,7 +332,7 @@ const Collection = () => {
     );
   }
 
-  // Render star rating component
+  // Render star rating 
   const renderStars = (rating) => {
     const stars = [];
     const fullStars = Math.floor(rating);
@@ -304,12 +359,12 @@ const Collection = () => {
       transition={{ duration: 0.5 }}
       className="max-padd-container !px-0 relative"
     >
-      {/* Sticky Filter Button for Mobile */}
+      {/*  Filter Button for Mobile  */}
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={toggleMobileFilters}
-        className={`lg:hidden fixed z-30 bottom-6 right-6 p-4 rounded-full shadow-xl bg-tertiary text-white transition-all duration-300 ${
+        className={`xs:hidden fixed z-30 bottom-6 right-6 p-4 rounded-full shadow-xl bg-tertiary text-white transition-all duration-300 ${
           isScrolled ? 'scale-90' : 'scale-100'
         }`}
         animate={{
@@ -321,7 +376,7 @@ const Collection = () => {
         <span className="sr-only">Filters</span>
       </motion.button>
 
-      {/* Mobile Filters Overlay */}
+      {/* Mobile Filters Overlay with  categories */}
       <AnimatePresence>
         {filters.mobileFiltersOpen && (
           <>
@@ -330,7 +385,7 @@ const Collection = () => {
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+              className="fixed inset-0 bg-black bg-opacity-50 z-40 xs:hidden"
               onClick={toggleMobileFilters}
             />
             
@@ -392,28 +447,30 @@ const Collection = () => {
                 </div>
               </div>
 
-              {/* Mobile Subcategories */}
-              <div className="mb-6">
-                <h5 className="font-medium mb-3">Types</h5>
-                <div className="grid grid-cols-2 gap-2">
-                  {SUB_CATEGORIES.map((subCat) => (
-                    <motion.button
-                      key={subCat}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => toggleFilterValue('subCategory', subCat)}
-                      className={`px-3 py-2 rounded-lg text-sm ${
-                        filters.subCategory.includes(subCat)
-                          ? 'bg-tertiary text-white'
-                          : 'bg-gray-100 hover:bg-gray-200'
-                      }`}
-                    >
-                      {subCat}
-                    </motion.button>
-                  ))}
+              {/* Mobile Subcategories - Dynamic based on selected category */}
+              {filters.category.length === 1 && (
+                <div className="mb-6">
+                  <h5 className="font-medium mb-3">Types</h5>
+                  <div className="grid grid-cols-2 gap-2">
+                    {SUB_CATEGORIES[filters.category[0]]?.map((subCat) => (
+                      <motion.button
+                        key={subCat}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => toggleFilterValue('subCategory', subCat)}
+                        className={`px-3 py-2 rounded-lg text-sm ${
+                          filters.subCategory.includes(subCat)
+                            ? 'bg-tertiary text-white'
+                            : 'bg-gray-100 hover:bg-gray-200'
+                        }`}
+                      >
+                        {subCat}
+                      </motion.button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Mobile Price Range */}
+              {/* Mobile Price Range (same as before) */}
               <div className="mb-6">
                 <h5 className="font-medium mb-3">Price Range</h5>
                 <div className="grid grid-cols-2 gap-2">
@@ -475,7 +532,7 @@ const Collection = () => {
       </AnimatePresence>
 
       <div className="flex flex-col xs:flex-row gap-8 mb-16">
-        {/* Desktop Filters */}
+        {/* Desktop Filters - Updated with new categories */}
         <motion.aside 
           variants={ANIMATION_VARIANTS.filterPanel}
           initial="hidden"
@@ -483,7 +540,7 @@ const Collection = () => {
           exit="exit"
           className="hidden lg:block min-w-80 bg-white p-6 rounded-xl shadow-lg sticky top-4 h-fit"
         >
-          {/* Search with enhanced animation */}
+          {/* Search */}
           <motion.div 
             whileHover={{ scale: 1.01 }}
             whileFocus={{ scale: 1.02 }}
@@ -509,7 +566,7 @@ const Collection = () => {
             )}
           </motion.div>
 
-          {/* Categories with animated checkboxes */}
+          {/* Categories - Updated */}
           <motion.div className="mb-8">
             <h5 className="font-bold text-lg mb-4 flex items-center justify-between">
               <span>Categories</span>
@@ -570,68 +627,70 @@ const Collection = () => {
             </ul>
           </motion.div>
 
-          {/* Subcategories with animated checkboxes */}
-          <motion.div className="mb-8">
-            <h5 className="font-bold text-lg mb-4 flex items-center justify-between">
-              <span>Types</span>
-              {filters.subCategory.length > 0 && (
-                <button 
-                  onClick={() => updateFilter('subCategory', [])}
-                  className="text-xs text-tertiary hover:text-tertiary-dark"
-                >
-                  Clear
-                </button>
-              )}
-            </h5>
-            <ul className="space-y-2">
-              {SUB_CATEGORIES.map((subCat) => (
-                <motion.li 
-                  key={subCat}
-                  whileHover={{ x: 5 }}
-                  className="flex items-center"
-                >
-                  <motion.input
-                    type="checkbox"
-                    id={`subCat-${subCat}`}
-                    checked={filters.subCategory.includes(subCat)}
-                    onChange={() => toggleFilterValue('subCategory', subCat)}
-                    className="hidden"
-                  />
-                  <motion.label
-                    htmlFor={`subCat-${subCat}`}
-                    className="flex items-center cursor-pointer w-full"
-                    whileTap={{ scale: 0.95 }}
+          {/* Subcategories - Dynamic based on selected category */}
+          {filters.category.length === 1 && (
+            <motion.div className="mb-8">
+              <h5 className="font-bold text-lg mb-4 flex items-center justify-between">
+                <span>Types</span>
+                {filters.subCategory.length > 0 && (
+                  <button 
+                    onClick={() => updateFilter('subCategory', [])}
+                    className="text-xs text-tertiary hover:text-tertiary-dark"
                   >
-                    <motion.span
-                      animate={{
-                        backgroundColor: filters.subCategory.includes(subCat) 
-                          ? 'var(--tertiary)' 
-                          : 'var(--white)',
-                        borderColor: filters.subCategory.includes(subCat) 
-                          ? 'var(--tertiary)' 
-                          : 'var(--gray-300)'
-                      }}
-                      className="w-5 h-5 border rounded-md mr-3 flex items-center justify-center transition-colors"
+                    Clear
+                  </button>
+                )}
+              </h5>
+              <ul className="space-y-2">
+                {SUB_CATEGORIES[filters.category[0]]?.map((subCat) => (
+                  <motion.li 
+                    key={subCat}
+                    whileHover={{ x: 5 }}
+                    className="flex items-center"
+                  >
+                    <motion.input
+                      type="checkbox"
+                      id={`subCat-${subCat}`}
+                      checked={filters.subCategory.includes(subCat)}
+                      onChange={() => toggleFilterValue('subCategory', subCat)}
+                      className="hidden"
+                    />
+                    <motion.label
+                      htmlFor={`subCat-${subCat}`}
+                      className="flex items-center cursor-pointer w-full"
+                      whileTap={{ scale: 0.95 }}
                     >
-                      {filters.subCategory.includes(subCat) && (
-                        <motion.span
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className="block w-3 h-3 bg-white rounded-sm"
-                        />
-                      )}
-                    </motion.span>
-                    <span className="text-gray-700">{subCat}</span>
-                    <span className="ml-auto text-gray-400 text-sm">
-                      ({processedProducts.filter(p => p.subCategory === subCat).length})
-                    </span>
-                  </motion.label>
-                </motion.li>
-              ))}
-            </ul>
-          </motion.div>
+                      <motion.span
+                        animate={{
+                          backgroundColor: filters.subCategory.includes(subCat) 
+                            ? 'var(--tertiary)' 
+                            : 'var(--white)',
+                          borderColor: filters.subCategory.includes(subCat) 
+                            ? 'var(--tertiary)' 
+                            : 'var(--gray-300)'
+                        }}
+                        className="w-5 h-5 border rounded-md mr-3 flex items-center justify-center transition-colors"
+                      >
+                        {filters.subCategory.includes(subCat) && (
+                          <motion.span
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="block w-3 h-3 bg-white rounded-sm"
+                          />
+                        )}
+                      </motion.span>
+                      <span className="text-gray-700">{subCat}</span>
+                      <span className="ml-auto text-gray-400 text-sm">
+                        ({processedProducts.filter(p => p.subCategory === subCat).length})
+                      </span>
+                    </motion.label>
+                  </motion.li>
+                ))}
+              </ul>
+            </motion.div>
+          )}
 
-          {/* Price Range */}
+          {/* Price Range*/}
           <motion.div className="mb-8">
             <h5 className="font-bold text-lg mb-4 flex items-center justify-between">
               <span>Price Range</span>
@@ -689,7 +748,7 @@ const Collection = () => {
             </ul>
           </motion.div>
 
-          {/* Sort with enhanced dropdown */}
+          {/* Sort*/}
           <motion.div className="mb-8">
             <h5 className="font-bold text-lg mb-4">Sort By</h5>
             <motion.select
@@ -707,7 +766,7 @@ const Collection = () => {
             </motion.select>
           </motion.div>
 
-          {/* Clear all filters with enhanced animation */}
+          {/* Clear all filters (same as before) */}
           <motion.button
             whileHover={{ 
               scale: 1.03,
@@ -781,7 +840,6 @@ const Collection = () => {
                     className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow"
                   >
                     <Item product={product} />
-                    {/* Enhanced product card footer */}
                     <div className="p-4">
                       <h3 className="font-medium text-gray-900 truncate">{product.name}</h3>
                       <div className="flex justify-between items-center mt-2">
@@ -833,7 +891,7 @@ const Collection = () => {
             </motion.div>
           </AnimatePresence>
 
-          {/* Enhanced Pagination */}
+          {/* Pagination */}
           {totalPages > 1 && (
             <motion.div 
               layout

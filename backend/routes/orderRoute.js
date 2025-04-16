@@ -1,21 +1,33 @@
-import express from 'express';
-import { allOrders, placeOrder, placeOrderMobileMoney, updateStatus, userOrders, verifymobilemoney } from '../controllers/orderController.js';
-import adminAuth from '../middleware/adminAuth.js';
-import authUser from '../middleware/authUser.js';
+import express from "express";
+import {
+  allOrders,
+  placeOrder,
+  placeOrderPayStack,
+  paystackCallback,
+  updateStatus,
+  userOrders,
+  verifyPayStack,
+} from "../controllers/orderController.js";
+import adminAuth from "../middleware/adminAuth.js";
+import authUser from "../middleware/authUser.js";
 
-const orderRouter = express.Router()
+const orderRouter = express.Router();
 
-orderRouter.post('/list',adminAuth, allOrders)
-orderRouter.post('/status',adminAuth, updateStatus)
+// Admin routes
+orderRouter.post("/list", adminAuth, allOrders);
+orderRouter.post("/status", adminAuth, updateStatus);
 
-//For payment
-orderRouter.post('/place',authUser, placeOrder)
-orderRouter.post('/mobilemoney',authUser, placeOrderMobileMoney)
+// Payment routes
+orderRouter.post("/place", authUser, placeOrder);
+orderRouter.post("/paystack", authUser, placeOrderPayStack);
 
-//Verify Payment
-orderRouter.post('/verifymobilemoney', authUser, verifymobilemoney)
+// Payment callback (unauthenticated)
+orderRouter.get("/paystack/callback", paystackCallback);
 
-// For user
-orderRouter.post('/userorders', authUser, userOrders)
+// Payment verification
+orderRouter.get("/verifypaystack/:reference", authUser, verifyPayStack);
+
+// User routes
+orderRouter.get("/userorders", authUser, userOrders); // Changed from POST to GET
 
 export default orderRouter;
