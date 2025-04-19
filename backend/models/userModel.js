@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true },
     cartData: { type: Object, default: {} },
     wishlistData: { type: [String], default: [] },
+    isAdmin: { type: Boolean, default: false },
   },
   { minimize: false }
 );
