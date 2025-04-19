@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const backend_url = import.meta.env.VITE_BACKEND_URL || "http://localhost:4000"; // Fallback to localhost
+const backend_url = import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
 
 const axiosInstance = axios.create({
   baseURL: backend_url,
@@ -11,13 +11,11 @@ axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("auth_token");
     if (token) {
-      config.headers.token = token;
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 export default axiosInstance;

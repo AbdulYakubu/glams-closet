@@ -2,15 +2,14 @@ import jwt from "jsonwebtoken";
 
 const adminAuth = async (req, res, next) => {
   try {
-    console.log("adminAuth - Received Token:", req.headers.token?.slice(0, 20) + "...");
-    const token = req.headers.token;
+    const authHeader = req.headers.authorization;
 
-    if (!token) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return res.status(401).json({ success: false, message: "No token provided" });
     }
 
+    const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("adminAuth - Decoded:", decoded);
 
     if (decoded.role !== "admin") {
       return res.status(403).json({ success: false, message: "Not authorized as admin" });

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import login from "../assets/login_img.png";
-import axiosInstance from "../axiosInstance"; // Points to src/axiosInstance.js
+import axiosInstance from "../axiosInstance"; 
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { FiLock, FiMail, FiEye, FiEyeOff } from "react-icons/fi";
