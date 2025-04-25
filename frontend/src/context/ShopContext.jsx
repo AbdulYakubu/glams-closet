@@ -18,6 +18,13 @@ const ShopContextProvider = (props) => {
   const [token, setToken] = useState("");
   const [cartItems, setCartItems] = useState({});
   const [wishlistItems, setWishlistItems] = useState([]);
+  const [userLocation, setUserLocation] = useState("");
+
+  const shippingRates = {
+    Local: { fee: 10, freeThreshold: 200 },
+    Regional: { fee: 25, freeThreshold: 300 },
+    International: { fee: 60, freeThreshold: 500 },
+  };
 
   const updateQuantity = (itemId, size, newQuantity) => {
     setCartItems((prevCart) => {
@@ -241,6 +248,9 @@ const ShopContextProvider = (props) => {
     getCartAmount,
     backendUrl,
     logout,
+    userLocation,
+    setUserLocation,
+    shippingRates,
   };
 
   return (

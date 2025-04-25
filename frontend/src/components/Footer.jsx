@@ -1,124 +1,127 @@
-import React from 'react'
-import { FaDiscord, FaFacebook, FaInstagram, FaLocationDot, FaPhone, FaQuestion, FaSnapchat, FaTiktok, FaTwitter, FaWhatsapp, FaX } from 'react-icons/fa6'
-import {FaMailBulk} from 'react-icons/fa'
+import React from 'react';
+import { Link } from 'react-router-dom'; // Import Link for routing
+import { 
+  FaDiscord, 
+  FaFacebook, 
+  FaInstagram, 
+  FaPhone, 
+  FaTwitter, 
+  FaWhatsapp 
+} from 'react-icons/fa';
+import { 
+  FaLocationDot,
+  FaEnvelope
+} from 'react-icons/fa6';
+import { FaSnapchat, FaTiktok } from 'react-icons/fa';
 
 const Footer = () => {
   return (
-    <footer>
-      <div className='max-padd-container flex items-start justify-between flex-col lg:flex-row gap-8 py-6 mb-7 bg-primary'>
-        <div>
-          <h4 className='h4'>We are always here to help</h4>
-          <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. </p>
+    <footer className="bg-primary text-gray-700">
+      {/* Top Section - Contact Info */}
+      <div className="container mx-auto px-6 py-12 border-b border-gray-200">
+        <div className="flex flex-col md:flex-row justify-between items-start gap-8">
+          <div className="max-w-md">
+            <h3 className="text-2xl font-serif font-medium mb-4">We're Here to Help</h3>
+            <p className="text-gray-500">Your satisfaction is our priority. Contact us anytime for assistance with your orders or inquiries.</p>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+            <div className="flex items-start gap-4">
+              <div className="mt-1 text-secondary">
+                <FaLocationDot size={20} />
+              </div>
+              <div>
+                <h4 className="font-medium mb-1">Location</h4>
+                <p className="text-gray-500">Koforidua Zongo</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-4">
+              <div className="mt-1 text-secondary">
+                <FaPhone size={18} />
+              </div>
+              <div>
+                <h4 className="font-medium mb-1">Phone</h4>
+                <p className="text-gray-500">+233 542 271 847</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-4">
+              <div className="mt-1 text-secondary">
+                <FaEnvelope size={18} />
+              </div>
+              <div>
+                <h4 className="font-medium mb-1">Email</h4>
+                <p className="text-gray-500">yakubuabdulaziz641@gmail.com</p>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className=' flexStart flex-wrap gap-8'>
-          <div className='flexCenter gap-x-6'>
-            <FaLocationDot/>
-            <div>
-              <h5 className='h5'>Location</h5>
-              <p>Koforidua Zongo</p>
+      </div>
+
+      {/* Middle Section - Links */}
+      <div className="container mx-auto px-6 py-12">
+        <div className="flex flex-col lg:flex-row justify-between gap-12">
+          {/* Brand Info */}
+          <div className="max-w-xs">
+            <h2 className="text-3xl font-serif font-medium mb-4">
+              Glams<span className="text-secondary">Closet</span>
+            </h2>
+            <p className="text-gray-500 mb-6">Elevating your style with carefully curated fashion pieces for every occasion.</p>
+            
+            <div className="flex gap-6">
+              {[FaInstagram, FaTwitter, FaFacebook, FaTiktok, FaWhatsapp, FaDiscord, FaSnapchat].map((Icon, index) => (
+                <a key={index} href="#" className="text-gray-400 hover:text-secondary transition-colors">
+                  <Icon size={24} />
+                </a>
+              ))}
             </div>
           </div>
-          <div className='flexCenter gap-x-6'>
-            <FaPhone />
+
+          {/* Links */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             <div>
-              <h5 className='h5'>Phone</h5>
-              <p>+233 542 271 847</p>
+              <h4 className="font-serif text-lg font-medium mb-4">Customer Service</h4>
+              <ul className="space-y-2">
+                {['Help Center', 'Payment Methods', 'Contact', 'Orders', 'Returns'].map((item) => (
+                  <li key={item}>
+                    <Link to={`/${item.replace('', '').toLowerCase()}`} className="text-gray-500 hover:text-secondary transition-colors">
+                      {item}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
-          <div className='flexCenter gap-x-6'>
-            <FaMailBulk/>
+
             <div>
-              <h5 className='h5'>Email Support</h5>
-              <p>yakubuabdulaziz641@gmail.com</p>
+              <h4 className="font-serif text-lg font-medium mb-4">Information</h4>
+              <ul className="space-y-2">
+                {['AboutUs', 'Careers', 'Blog', 'Press', 'Collection'].map((item) => (
+                  <li key={item}>
+                    <Link to={`/${item.replace(' ', '').toLowerCase()}`} className="text-gray-500 hover:text-secondary transition-colors">
+                      {item}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>
       </div>
-      <div className='max-padd-container flex items-start justify-between flex-wrap gap-12 mt-12'>
-        {/*logo leftside*/}
-        <div className='flex flex-col max-w-sm gap-y-5'>
-          <div className='bold-32'>
-            Glams<span className='text-secondary'>Closet</span>
+
+      {/* Bottom Section - Copyright */}
+      <div className="bg-gray-100 py-6">
+        <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center">
+          <p className="text-gray-500 text-sm">© 2025 GlamsCloset. All rights reserved.</p>
+          <div className="flex gap-4 mt-4 md:mt-0">
+            <Link to="/terms" className="text-gray-500 hover:text-secondary text-sm">Terms</Link>
+            <Link to="/privacy" className="text-gray-500 hover:text-secondary text-sm">Privacy</Link>
+            <Link to="/cookies" className="text-gray-500 hover:text-secondary text-sm">Cookies</Link>
           </div>
-          <p>Lorem ipsum dolor, sit amet consectetur adipisicing elit. </p>
-          <div className="flexStart gap-7 xl:gap-x-36 flex-wrap grid grid-cols-3">
-  {/* Customer Service Section */}
-  <ul>
-    <h4 className="h4 mb-3">Customer Service</h4>
-    <li className="my-2">
-      <a href="" className="text-gray-30 regular-14">Help Center</a>
-    </li>
-    <li className="my-2">
-      <a href="" className="text-gray-30 regular-14">Payment Methods</a>
-    </li>
-    <li className="my-2">
-      <a href="" className="text-gray-30 regular-14">Contact</a>
-    </li>
-    <li className="my-2">
-      <a href="" className="text-gray-30 regular-14">Shipping Status</a>
-    </li>
-    <li className="my-2">
-      <a href="" className="text-gray-30 regular-14">Complaints</a>
-    </li>
-  </ul>
-
-  {/* Legal Section */}
-  <ul>
-    <h4 className="h4 mb-3">Legal</h4>
-    <li className="my-2">
-      <a href="" className="text-gray-30 regular-14">Privacy Policy</a>
-    </li>
-    <li className="my-2">
-      <a href="" className="text-gray-30 regular-14">Cookie Settings</a>
-    </li>
-    <li className="my-2">
-      <a href="" className="text-gray-30 regular-14">Terms and Conditions</a>
-    </li>
-    <li className="my-2">
-      <a href="" className="text-gray-30 regular-14">Cancellation</a>
-    </li>
-    <li className="my-2">
-      <a href="" className="text-gray-30 regular-14">Imprint</a>
-    </li>
-  </ul>
-
-  {/* Social Section */}
-  <ul>
-    <h4 className="h4 mb-3">Social</h4>
-    <li className="my-2">
-      <a href="" className="text-gray-30 regular-14"><FaWhatsapp /></a>
-    </li>
-    <li className="my-2">
-      <a href="" className="text-gray-30 regular-14"><FaSnapchat /></a>
-    </li>
-    <li className="my-2">
-      <a href="" className="text-gray-30 regular-14"><FaInstagram /></a>
-    </li>
-    <li className="my-2">
-      <a href="" className="text-gray-30 regular-14"><FaTwitter /></a>
-    </li>
-    <li className="my-2">
-      <a href="" className="text-gray-30 regular-14"><FaTiktok /></a>
-    </li>
-    <li className="my-2">
-      <a href="" className="text-gray-30 regular-14"><FaDiscord /></a>
-    </li>
-    <li className="my-2">
-      <a href="" className="text-gray-30 regular-14"><FaFacebook /></a>
-    </li>
-  </ul>
-</div>
         </div>
       </div>
-      {/*copyrights*/}
-      <p className='max-padd-container bg-primary medium-14 py-2 px-8 rounded flexBetween'>
-        <span>2025 Glams Closet</span>
-        <span>
-          All rights reserved
-        </span>
-      </p>
     </footer>
-  )
+  );
 }
 
-export default Footer
+export default Footer;

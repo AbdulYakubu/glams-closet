@@ -5,7 +5,7 @@ const Navbar = ({ containerStyles, onLinkClick }) => {
   const navLinks = [
     { path: '/', title: 'Home' },
     { path: '/collection', title: 'Collection' },
-    { path: '/testimonial', title: 'Testimonial' },
+    { path: '/aboutus', title: 'About Us' },
     { path: '/contact', title: 'Contact' },
   ];
 
@@ -16,10 +16,12 @@ const Navbar = ({ containerStyles, onLinkClick }) => {
           key={link.title}
           to={link.path}
           className={({ isActive }) =>
-            isActive ? "active-link transition-all duration-300" : "inactive-link transition-all duration-300"
+            `transition-all duration-300 text-gray-900 dark:text-white ${
+              isActive ? 'active-link' : 'inactive-link'
+            }`
           }
-          onClick={onLinkClick} // Close menu on link click
-          aria-label={link.title} // Accessibility for each link
+          onClick={onLinkClick}
+          aria-label={link.title}
         >
           {link.title}
         </NavLink>

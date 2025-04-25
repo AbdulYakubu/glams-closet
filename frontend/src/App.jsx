@@ -13,6 +13,17 @@ import 'react-toastify/dist/ReactToastify.css'
 import PlaceOrder from './pages/PlaceOrder'
 import Login from './pages/Login'
 import Orders from './pages/Orders'
+import AboutUs from './pages/AboutUs'
+import HelpCenter from './components/HelpCenter'
+import Returns from './components/Returns'
+import BlogPage from './components/BlogPage'
+import TermsPage from './components/TermsPage'
+import PaymentMethodsPage from './components/PaymentMethodsPage'
+import PrivacyPage from './components/PrivacyPage'
+import CookiesPage from './components/CookiesPage'
+import { DarkModeProvider } from './context/DarkModeContext';
+
+
 
 const App = () => {
   return (
@@ -21,6 +32,14 @@ const App = () => {
       <Header />
       <Routes>
         <Route path='/' element={<Home />} />
+        <Route path='/cookies' element={<CookiesPage/>}/>
+        <Route path='/terms' element={<TermsPage />} />
+        <Route path='/privacy' element={<PrivacyPage/>}/>
+        <Route path='/Payment Methods' element={<PaymentMethodsPage/>}/>
+        <Route path='/blog' element={<BlogPage/>}/>
+        <Route path='/returns' element={<Returns/> } />
+        <Route path='/help center' element={< HelpCenter/> } />
+        <Route path='/aboutus' element={<AboutUs/>}/>
         <Route path='/collection' element={<Collection />} />
         <Route path='/contact' element={<Contact />} />
         <Route path='/testimonial' element={<Testimonial />} />

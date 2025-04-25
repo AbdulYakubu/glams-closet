@@ -75,7 +75,7 @@ const NewArrivals = () => {
       viewport={{ once: true }}
       className="py-16 bg-primary"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 xs:px-8">
         <Title 
           title1="New"
           title2="Arrivals"
@@ -85,7 +85,7 @@ const NewArrivals = () => {
         />
 
         {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 sm:grid-cols-2">
             {[...Array(5)].map((_, i) => (
               <motion.div
                 key={i}

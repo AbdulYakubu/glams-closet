@@ -3,67 +3,54 @@ import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { FiX, FiChevronLeft, FiChevronRight, FiSearch, FiFilter } from 'react-icons/fi';
 import { TbLoader } from 'react-icons/tb';
 import { FaStar, FaRegStar, FaStarHalfAlt } from 'react-icons/fa';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Item from '../components/Item';
 import Footer from '../components/Footer';
 import { ShopContext } from '../context/ShopContext';
 
-// Updated Constants with new categories
+// Category mapping from Categories page slugs to Collection page categories
+const CATEGORY_SLUG_MAPPING = {
+  'abayas': 'Egypt Abaya',
+  'hijabs': 'Khimars',
+  'kids': 'Kids',
+  'perfumes': 'Perfumes and Self Care Products',
+  'bags': 'Bags',
+  'jalibabs': 'Jalibab',
+  'ready-to-wear': 'Ready to Wear',
+  'gifts': 'Gift & Packages',
+  'veils': 'Veils and Hijab Accessories',
+  'accessories': 'Veils and Hijab Accessories',
+};
+
+// Updated Constants
 const CATEGORIES = [
   'Bags',
   'Perfumes and Self Care Products',
   'Egypt Abaya',
-  'Dubai Abaya',
+  'Jalibab',
   'Ready to Wear',
-  'Cuft Packages',
+  'Gift & Packages',
   'Khimars',
-  'Veils and Hijab Accessories'
+  'Veils and Hijab Accessories',
+  'Kids'
 ];
 
 const SUB_CATEGORIES = {
-  'Bags': [
-    'Handbags',
-    'Tote Bags',
-    'Clutches',
-    'Backpacks',
-    'Travel Bags'
-  ],
+  'Bags': ['Handbags', 'Tote Bags', 'Clutches', 'Backpacks', 'Travel Bags'],
   'Perfumes and Self Care Products': [
-    'Women\'s Perfumes',
-    'Men\'s Perfumes',
+    "Women's Perfumes",
+    "Men's Perfumes",
     'Luxury Fragrances',
     'Body Care',
-    'Hair Care'
+    'Hair Care',
   ],
-  'Egypt Abaya': [
-    'Traditional',
-    'Modern',
-    'Embroidered'
-  ],
-  'Dubai Abaya': [
-    'Luxury',
-    'Designer',
-    'Open Style'
-  ],
-  'Ready to Wear': [
-    'Casual',
-    'Formal',
-    'Party Wear'
-  ],
-  'Cuft Packages': [
-    'Premium',
-    'Deluxe',
-    'Standard'
-  ],
-  'Khimars': [
-    'Traditional',
-    'Modern',
-    'Embroidered'
-  ],
-  'Veils and Hijab Accessories': [
-    'Hijabs',
-    'Under Scarves',
-    'Pins and Accessories'
-  ]
+  'Egypt Abaya': ['Traditional', 'Modern', 'Embroidered'],
+  'Jalibab': ['Traditional', 'Modern', 'Designer'],
+  'Ready to Wear': ['Casual', 'Formal', 'Party Wear'],
+  'Gift & Packages': ['Premium', 'Deluxe', 'Standard'],
+  'Khimars': ['Traditional', 'Modern', 'Embroidered'],
+  'Veils and Hijab Accessories': ['Hijabs', 'Under Scarves', 'Pins and Accessories'],
+  'Kids': ['Casual', 'Formal', 'Traditional']
 };
 
 const SORT_OPTIONS = [
@@ -71,7 +58,7 @@ const SORT_OPTIONS = [
   { value: 'Low', label: 'Price: Low to High' },
   { value: 'High', label: 'Price: High to Low' },
   { value: 'newest', label: 'Newest Arrivals' },
-  { value: 'rating', label: 'Highest Rated' }
+  { value: 'rating', label: 'Highest Rated' },
 ];
 
 const ITEMS_PER_PAGE = 12;
@@ -79,7 +66,7 @@ const PRICE_RANGES = [
   { label: 'Under ₵200', min: 0, max: 200 },
   { label: '₵100 to ₵500', min: 100, max: 500 },
   { label: '₵200 to ₵1000', min: 200, max: 1000 },
-  { label: 'Over ₵1000', min: 1000, max: Infinity }
+  { label: 'Over ₵1000', min: 1000, max: Infinity },
 ];
 
 // Animation variants
@@ -89,66 +76,61 @@ const ANIMATION_VARIANTS = {
     show: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.08,
-        delayChildren: 0.2
-      }
-    }
+        staggerChildren: 0.1,
+        delayChildren: 0.3,
+      },
+    },
   },
   item: {
-    hidden: { opacity: 0, y: 20 },
-    show: { 
-      opacity: 1, 
+    hidden: { opacity: 0, y: 30, scale: 0.95 },
+    show: {
+      opacity: 1,
       y: 0,
+      scale: 1,
       transition: {
-        type: "spring",
-        stiffness: 120,
-        damping: 12
-      }
+        type: 'spring',
+        stiffness: 150,
+        damping: 15,
+      },
     },
     hover: {
-      y: -8,
-      scale: 1.02,
-      transition: { 
-        type: "spring",
-        stiffness: 400,
-        damping: 10
-      }
+      y: -10,
+      scale: 1.03,
+      transition: { type: 'spring', stiffness: 400, damping: 10 },
     },
-    tap: {
-      scale: 0.98
-    }
+    tap: { scale: 0.97 },
   },
   filterPanel: {
     hidden: { x: -50, opacity: 0 },
-    visible: { 
-      x: 0, 
+    visible: {
+      x: 0,
       opacity: 1,
-      transition: { 
-        type: "spring",
-        stiffness: 120,
-        damping: 15
-      }
+      transition: { type: 'spring', stiffness: 120, damping: 15 },
     },
-    exit: {
-      x: -50,
-      opacity: 0,
-      transition: { duration: 0.2 }
-    }
+    exit: { x: -50, opacity: 0, transition: { duration: 0.2 } },
   },
   mobileFilterOverlay: {
     hidden: { opacity: 0 },
     visible: { opacity: 1 },
-    exit: { opacity: 0 }
+    exit: { opacity: 0 },
   },
   mobileFilterPanel: {
     hidden: { x: '100%' },
     visible: { x: 0 },
-    exit: { x: '100%' }
-  }
+    exit: { x: '100%' },
+  },
+  breadcrumb: {
+    hidden: { opacity: 0, y: -20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+  },
 };
 
 const Collection = () => {
   const { products = [], loading = false } = useContext(ShopContext);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const controls = useAnimation();
+  const [isScrolled, setIsScrolled] = useState(false);
   const [filters, setFilters] = useState({
     category: [],
     subCategory: [],
@@ -156,12 +138,26 @@ const Collection = () => {
     sort: 'relevant',
     page: 1,
     search: '',
-    mobileFiltersOpen: false
+    mobileFiltersOpen: false,
   });
-  const [isScrolled, setIsScrolled] = useState(false);
-  const controls = useAnimation();
 
-  // Handle scroll (same as before)
+  // Extract category from URL and set initial filter
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const categorySlug = params.get('category');
+    if (categorySlug) {
+      const mappedCategory = CATEGORY_SLUG_MAPPING[categorySlug];
+      if (mappedCategory && !filters.category.includes(mappedCategory)) {
+        setFilters((prev) => ({
+          ...prev,
+          category: [mappedCategory],
+          page: 1,
+        }));
+      }
+    }
+  }, [location.search]);
+
+  // Handle scroll for sticky elements
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
@@ -170,65 +166,63 @@ const Collection = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Process products (same as before)
+  // Process products with lazy loading metadata
   const processedProducts = useMemo(() => {
     return products.map((product, index) => ({
       ...product,
       id: product.id || `prod_${index}_${Date.now()}`,
-      avgRating: product.reviews?.length > 0 
+      avgRating: product.reviews?.length > 0
         ? product.reviews.reduce((acc, review) => acc + review.rating, 0) / product.reviews.length
-        : 0
+        : 0,
+      loading: 'lazy', // Add lazy loading for images
     }));
   }, [products]);
 
-  // Enhanced filter and sort logic with new categories
+  // Filter and sort logic
   const { filteredProducts, totalPages } = useMemo(() => {
     let filtered = [...processedProducts];
 
     // Apply search filter
     if (filters.search) {
       const query = filters.search.toLowerCase();
-      filtered = filtered.filter(p => 
-        p.name?.toLowerCase().includes(query) ||
-        p.description?.toLowerCase().includes(query) ||
-        p.category?.toLowerCase().includes(query) ||
-        p.tags?.some(tag => tag.toLowerCase().includes(query))
+      filtered = filtered.filter(
+        (p) =>
+          p.name?.toLowerCase().includes(query) ||
+          p.description?.toLowerCase().includes(query) ||
+          p.category?.toLowerCase().includes(query) ||
+          p.tags?.some((tag) => tag.toLowerCase().includes(query))
       );
     }
 
     // Apply category filters
     if (filters.category.length > 0) {
-      filtered = filtered.filter(p => 
-        p.category && filters.category.includes(p.category)
-      );
+      filtered = filtered.filter((p) => p.category && filters.category.includes(p.category));
     }
 
     // Apply subcategory filters
     if (filters.subCategory.length > 0) {
-      filtered = filtered.filter(p => 
-        p.subCategory && filters.subCategory.includes(p.subCategory)
-      );
+      filtered = filtered.filter((p) => p.subCategory && filters.subCategory.includes(p.subCategory));
     }
 
     // Apply price range filters
     if (filters.priceRange.length > 0) {
-      filtered = filtered.filter(p => {
-        return filters.priceRange.some(range => {
-          const { min, max } = PRICE_RANGES.find(r => r.label === range) || {};
+      filtered = filtered.filter((p) =>
+        filters.priceRange.some((range) => {
+          const { min, max } = PRICE_RANGES.find((r) => r.label === range) || {};
           return p.price >= min && p.price <= max;
-        });
-      });
+        })
+      );
     }
 
-    // Enhanced sorting options
+    // Sorting
     switch (filters.sort) {
-      case 'Low': 
+      case 'Low':
         filtered.sort((a, b) => (a.price || 0) - (b.price || 0));
         break;
-      case 'High': 
+      case 'High':
         filtered.sort((a, b) => (b.price || 0) - (a.price || 0));
         break;
-      case 'newest': 
+      case 'newest':
         filtered.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
         break;
       case 'rating':
@@ -247,38 +241,47 @@ const Collection = () => {
     const paginated = filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
     const total = Math.ceil(filtered.length / ITEMS_PER_PAGE);
 
-    return { 
-      filteredProducts: paginated, 
-      totalPages: total
-    };
+    return { filteredProducts: paginated, totalPages: total };
   }, [processedProducts, filters]);
 
-  // Filtter
-  const updateFilter = useCallback((filterName, value) => {
-    controls.start({ opacity: [1, 0.5, 1], transition: { duration: 0.3 } });
-    setFilters(prev => ({
-      ...prev,
-      [filterName]: value,
-      page: 1,
-      ...(filterName === 'category' && { subCategory: [] }) // Reset subcategory when category changes
-    }));
-  }, [controls]);
+  // Filter update functions
+  const updateFilter = useCallback(
+    (filterName, value) => {
+      controls.start({ opacity: [1, 0.7, 1], transition: { duration: 0.3 } });
+      setFilters((prev) => ({
+        ...prev,
+        [filterName]: value,
+        page: 1,
+        ...(filterName === 'category' && { subCategory: [] }),
+      }));
+      // Update URL without category query if filters are cleared
+      if (filterName === 'category' && value.length === 0) {
+        navigate('/collection');
+      }
+    },
+    [controls, navigate]
+  );
 
-  // Toggle filter value
-  const toggleFilterValue = useCallback((filterName, value) => {
-    controls.start({ scale: [1, 0.95, 1], transition: { duration: 0.2 } });
-    setFilters(prev => ({
-      ...prev,
-      [filterName]: prev[filterName].includes(value)
-        ? prev[filterName].filter(item => item !== value)
-        : [...prev[filterName], value],
-      page: 1
-    }));
-  }, [controls]);
+  const toggleFilterValue = useCallback(
+    (filterName, value) => {
+      controls.start({ scale: [1, 0.95, 1], transition: { duration: 0.2 } });
+      setFilters((prev) => ({
+        ...prev,
+        [filterName]: prev[filterName].includes(value)
+          ? prev[filterName].filter((item) => item !== value)
+          : [...prev[filterName], value],
+        page: 1,
+      }));
+      // Clear URL query if category is removed
+      if (filterName === 'category' && prev[filterName].includes(value)) {
+        navigate('/collection');
+      }
+    },
+    [controls, navigate]
+  );
 
-  // Reset filters 
   const resetFilters = useCallback(() => {
-    controls.start("reset");
+    controls.start('reset');
     setFilters({
       category: [],
       subCategory: [],
@@ -286,40 +289,52 @@ const Collection = () => {
       sort: 'relevant',
       page: 1,
       search: '',
-      mobileFiltersOpen: false
+      mobileFiltersOpen: false,
     });
-  }, [controls]);
+    navigate('/collection');
+  }, [controls, navigate]);
 
-  // Toggle mobile filters (same as before)
   const toggleMobileFilters = useCallback(() => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
-      mobileFiltersOpen: !prev.mobileFiltersOpen
+      mobileFiltersOpen: !prev.mobileFiltersOpen,
     }));
   }, []);
 
-  // Loading state (same as before)
+  // Render star rating
+  const renderStars = (rating) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+
+    for (let i = 1; i <= 5; i++) {
+      if (i <= fullStars) {
+        stars.push(<FaStar key={i} className="text-yellow-400" />);
+      } else if (i === fullStars + 1 && hasHalfStar) {
+        stars.push(<FaStarHalfAlt key={i} className="text-yellow-400" />);
+      } else {
+        stars.push(<FaRegStar key={i} className="text-yellow-400" />);
+      }
+    }
+
+    return <div className="flex">{stars}</div>;
+  };
+
+  // Loading state
   if (loading) {
     return (
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="flex flex-col justify-center items-center min-h-screen"
+        className="flex flex-col justify-center items-center min-h-screen bg-gray-50"
       >
         <motion.div
-          animate={{ 
-            rotate: 360,
-            scale: [1, 1.2, 1]
-          }}
-          transition={{ 
-            repeat: Infinity, 
-            duration: 1.5, 
-            ease: "easeInOut" 
-          }}
+          animate={{ rotate: 360, scale: [1, 1.2, 1] }}
+          transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
           className="mb-4"
         >
-          <TbLoader className="text-5xl text-tertiary" />
+          <TbLoader className="text-5xl text-indigo-600" />
         </motion.div>
         <motion.p
           animate={{ opacity: [0.5, 1, 0.5] }}
@@ -332,51 +347,100 @@ const Collection = () => {
     );
   }
 
-  // Render star rating 
-  const renderStars = (rating) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
-    
-    for (let i = 1; i <= 5; i++) {
-      if (i <= fullStars) {
-        stars.push(<FaStar key={i} className="text-yellow-400" />);
-      } else if (i === fullStars + 1 && hasHalfStar) {
-        stars.push(<FaStarHalfAlt key={i} className="text-yellow-400" />);
-      } else {
-        stars.push(<FaRegStar key={i} className="text-yellow-400" />);
-      }
-    }
-    
-    return <div className="flex">{stars}</div>;
-  };
-
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="max-padd-container !px-0 relative"
+      className="max-padd-container !px-0 relative bg-primary"
     >
-      {/*  Filter Button for Mobile  */}
+      {/* Breadcrumb Navigation */}
+      <motion.div
+        variants={ANIMATION_VARIANTS.breadcrumb}
+        initial="hidden"
+        animate="visible"
+        className="px-4 sm:px-6 py-4 bg-white shadow-sm"
+      >
+        <nav className="flex items-center space-x-2 text-sm text-gray-600">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            onClick={() => navigate('/')}
+            className="hover:text-indigo-600"
+          >
+            Home
+          </motion.button>
+          <span>/</span>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            onClick={() => navigate('/')}
+            className="hover:text-indigo-600"
+          >
+            Categories
+          </motion.button>
+          {filters.category.length > 0 && (
+            <>
+              <span>/</span>
+              <span className="font-medium text-indigo-600">{filters.category[0]}</span>
+            </>
+          )}
+        </nav>
+      </motion.div>
+
+      {/* Sticky Filter Summary */}
+      {filters.category.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="sticky top-0 z-20 bg-white shadow-sm px-4 sm:px-6 py-3 flex items-center justify-between"
+        >
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-medium text-gray-700">Filtered by:</span>
+            {filters.category.map((cat) => (
+              <motion.span
+                key={cat}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="inline-flex items-center px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm"
+              >
+                {cat}
+                <motion.button
+                  whileHover={{ scale: 1.2 }}
+                  whileTap={{ scale: 0.8 }}
+                  onClick={() => toggleFilterValue('category', cat)}
+                  className="ml-2 text-indigo-500"
+                >
+                  <FiX className="w-4 h-4" />
+                </motion.button>
+              </motion.span>
+            ))}
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={resetFilters}
+            className="text-sm text-indigo-600 hover:text-indigo-800"
+          >
+            Clear All
+          </motion.button>
+        </motion.div>
+      )}
+
+      {/* Mobile Filter Button */}
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={toggleMobileFilters}
-        className={`xs:hidden fixed z-30 bottom-6 right-6 p-4 rounded-full shadow-xl bg-tertiary text-white transition-all duration-300 ${
+        className={`xs:hidden fixed z-30 bottom-6 right-6 p-4 rounded-full shadow-xl bg-indigo-600 text-white transition-all duration-300 ${
           isScrolled ? 'scale-90' : 'scale-100'
         }`}
-        animate={{
-          y: isScrolled ? 10 : 0,
-          opacity: isScrolled ? 0.9 : 1
-        }}
+        animate={{ y: isScrolled ? 10 : 0, opacity: isScrolled ? 0.9 : 1 }}
       >
         <FiFilter className="text-xl" />
         <span className="sr-only">Filters</span>
       </motion.button>
 
-      {/* Mobile Filters Overlay with  categories */}
+      {/* Mobile Filters Overlay */}
       <AnimatePresence>
         {filters.mobileFiltersOpen && (
           <>
@@ -388,7 +452,6 @@ const Collection = () => {
               className="fixed inset-0 bg-black bg-opacity-50 z-40 xs:hidden"
               onClick={toggleMobileFilters}
             />
-            
             <motion.div
               variants={ANIMATION_VARIANTS.mobileFilterPanel}
               initial="hidden"
@@ -397,11 +460,8 @@ const Collection = () => {
               className="fixed top-0 right-0 h-full w-4/5 max-w-md bg-white z-50 shadow-2xl overflow-y-auto p-6"
             >
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold">Filters</h3>
-                <button 
-                  onClick={toggleMobileFilters}
-                  className="p-2 rounded-full hover:bg-gray-100"
-                >
+                <h3 className="text-xl font-bold text-gray-900">Filters</h3>
+                <button onClick={toggleMobileFilters} className="p-2 rounded-full hover:bg-gray-100">
                   <FiX className="text-xl" />
                 </button>
               </div>
@@ -414,7 +474,7 @@ const Collection = () => {
                   placeholder="Search products..."
                   value={filters.search}
                   onChange={(e) => updateFilter('search', e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-tertiary focus:border-transparent"
+                  className="w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
                 />
                 {filters.search && (
                   <button
@@ -428,7 +488,7 @@ const Collection = () => {
 
               {/* Mobile Categories */}
               <div className="mb-6">
-                <h5 className="font-medium mb-3">Categories</h5>
+                <h5 className="font-medium mb-3 text-gray-900">Categories</h5>
                 <div className="grid grid-cols-2 gap-2">
                   {CATEGORIES.map((cat) => (
                     <motion.button
@@ -437,7 +497,7 @@ const Collection = () => {
                       onClick={() => toggleFilterValue('category', cat)}
                       className={`px-3 py-2 rounded-lg text-sm ${
                         filters.category.includes(cat)
-                          ? 'bg-tertiary text-white'
+                          ? 'bg-indigo-600 text-white'
                           : 'bg-gray-100 hover:bg-gray-200'
                       }`}
                     >
@@ -447,10 +507,10 @@ const Collection = () => {
                 </div>
               </div>
 
-              {/* Mobile Subcategories - Dynamic based on selected category */}
+              {/* Mobile Subcategories */}
               {filters.category.length === 1 && (
                 <div className="mb-6">
-                  <h5 className="font-medium mb-3">Types</h5>
+                  <h5 className="font-medium mb-3 text-gray-900">Types</h5>
                   <div className="grid grid-cols-2 gap-2">
                     {SUB_CATEGORIES[filters.category[0]]?.map((subCat) => (
                       <motion.button
@@ -459,7 +519,7 @@ const Collection = () => {
                         onClick={() => toggleFilterValue('subCategory', subCat)}
                         className={`px-3 py-2 rounded-lg text-sm ${
                           filters.subCategory.includes(subCat)
-                            ? 'bg-tertiary text-white'
+                            ? 'bg-indigo-600 text-white'
                             : 'bg-gray-100 hover:bg-gray-200'
                         }`}
                       >
@@ -470,9 +530,9 @@ const Collection = () => {
                 </div>
               )}
 
-              {/* Mobile Price Range (same as before) */}
+              {/* Mobile Price Range */}
               <div className="mb-6">
-                <h5 className="font-medium mb-3">Price Range</h5>
+                <h5 className="font-medium mb-3 text-gray-900">Price Range</h5>
                 <div className="grid grid-cols-2 gap-2">
                   {PRICE_RANGES.map((range) => (
                     <motion.button
@@ -481,7 +541,7 @@ const Collection = () => {
                       onClick={() => toggleFilterValue('priceRange', range.label)}
                       className={`px-3 py-2 rounded-lg text-sm ${
                         filters.priceRange.includes(range.label)
-                          ? 'bg-tertiary text-white'
+                          ? 'bg-indigo-600 text-white'
                           : 'bg-gray-100 hover:bg-gray-200'
                       }`}
                     >
@@ -493,13 +553,13 @@ const Collection = () => {
 
               {/* Mobile Sort */}
               <div className="mb-6">
-                <h5 className="font-medium mb-3">Sort By</h5>
+                <h5 className="font-medium mb-3 text-gray-900">Sort By</h5>
                 <select
                   value={filters.sort}
                   onChange={(e) => updateFilter('sort', e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-tertiary focus:border-transparent"
+                  className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
                 >
-                  {SORT_OPTIONS.map(option => (
+                  {SORT_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -521,7 +581,7 @@ const Collection = () => {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={toggleMobileFilters}
-                  className="flex-1 py-2 bg-tertiary text-white rounded-lg font-medium"
+                  className="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-medium"
                 >
                   Apply
                 </motion.button>
@@ -531,28 +591,24 @@ const Collection = () => {
         )}
       </AnimatePresence>
 
-      <div className="flex flex-col xs:flex-row gap-8 mb-16">
-        {/* Desktop Filters - Updated with new categories */}
-        <motion.aside 
+      <div className="flex flex-col lg:flex-row gap-8 mb-16 px-4 sm:px-6">
+        {/* Desktop Filters */}
+        <motion.aside
           variants={ANIMATION_VARIANTS.filterPanel}
           initial="hidden"
           animate="visible"
           exit="exit"
-          className="hidden lg:block min-w-80 bg-white p-6 rounded-xl shadow-lg sticky top-4 h-fit"
+          className="hidden lg:block min-w-80 bg-white p-6 rounded-xl shadow-lg sticky top-20 h-fit"
         >
           {/* Search */}
-          <motion.div 
-            whileHover={{ scale: 1.01 }}
-            whileFocus={{ scale: 1.02 }}
-            className="relative mb-8"
-          >
+          <motion.div whileHover={{ scale: 1.01 }} whileFocus={{ scale: 1.02 }} className="relative mb-8">
             <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search products..."
               value={filters.search}
               onChange={(e) => updateFilter('search', e.target.value)}
-              className="w-full pl-10 pr-3 py-3 border rounded-xl focus:ring-2 focus:ring-tertiary focus:border-transparent transition-all"
+              className="w-full pl-10 pr-3 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition-all"
             />
             {filters.search && (
               <motion.button
@@ -566,26 +622,22 @@ const Collection = () => {
             )}
           </motion.div>
 
-          {/* Categories - Updated */}
+          {/* Categories */}
           <motion.div className="mb-8">
-            <h5 className="font-bold text-lg mb-4 flex items-center justify-between">
+            <h5 className="font-bold text-lg mb-4 flex items-center justify-between text-gray-900">
               <span>Categories</span>
               {filters.category.length > 0 && (
-                <button 
+                <button
                   onClick={() => updateFilter('category', [])}
-                  className="text-xs text-tertiary hover:text-tertiary-dark"
+                  className="text-xs text-indigo-600 hover:text-indigo-800"
                 >
                   Clear
                 </button>
               )}
             </h5>
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {CATEGORIES.map((cat) => (
-                <motion.li 
-                  key={cat}
-                  whileHover={{ x: 5 }}
-                  className="flex items-center"
-                >
+                <motion.li key={cat} whileHover={{ x: 5 }} className="flex items-center">
                   <motion.input
                     type="checkbox"
                     id={`cat-${cat}`}
@@ -600,12 +652,8 @@ const Collection = () => {
                   >
                     <motion.span
                       animate={{
-                        backgroundColor: filters.category.includes(cat) 
-                          ? 'var(--tertiary)' 
-                          : 'var(--white)',
-                        borderColor: filters.category.includes(cat) 
-                          ? 'var(--tertiary)' 
-                          : 'var(--gray-300)'
+                        backgroundColor: filters.category.includes(cat) ? '#4f46e5' : '#ffffff',
+                        borderColor: filters.category.includes(cat) ? '#4f46e5' : '#d1d5db',
                       }}
                       className="w-5 h-5 border rounded-md mr-3 flex items-center justify-center transition-colors"
                     >
@@ -619,7 +667,7 @@ const Collection = () => {
                     </motion.span>
                     <span className="text-gray-700">{cat}</span>
                     <span className="ml-auto text-gray-400 text-sm">
-                      ({processedProducts.filter(p => p.category === cat).length})
+                      ({processedProducts.filter((p) => p.category === cat).length})
                     </span>
                   </motion.label>
                 </motion.li>
@@ -627,27 +675,23 @@ const Collection = () => {
             </ul>
           </motion.div>
 
-          {/* Subcategories - Dynamic based on selected category */}
+          {/* Subcategories */}
           {filters.category.length === 1 && (
             <motion.div className="mb-8">
-              <h5 className="font-bold text-lg mb-4 flex items-center justify-between">
+              <h5 className="font-bold text-lg mb-4 flex items-center justify-between text-gray-900">
                 <span>Types</span>
                 {filters.subCategory.length > 0 && (
-                  <button 
+                  <button
                     onClick={() => updateFilter('subCategory', [])}
-                    className="text-xs text-tertiary hover:text-tertiary-dark"
+                    className="text-xs text-indigo-600 hover:text-indigo-800"
                   >
                     Clear
                   </button>
                 )}
               </h5>
-              <ul className="space-y-2">
+              <ul className="space-y-3">
                 {SUB_CATEGORIES[filters.category[0]]?.map((subCat) => (
-                  <motion.li 
-                    key={subCat}
-                    whileHover={{ x: 5 }}
-                    className="flex items-center"
-                  >
+                  <motion.li key={subCat} whileHover={{ x: 5 }} className="flex items-center">
                     <motion.input
                       type="checkbox"
                       id={`subCat-${subCat}`}
@@ -662,12 +706,8 @@ const Collection = () => {
                     >
                       <motion.span
                         animate={{
-                          backgroundColor: filters.subCategory.includes(subCat) 
-                            ? 'var(--tertiary)' 
-                            : 'var(--white)',
-                          borderColor: filters.subCategory.includes(subCat) 
-                            ? 'var(--tertiary)' 
-                            : 'var(--gray-300)'
+                          backgroundColor: filters.subCategory.includes(subCat) ? '#4f46e5' : '#ffffff',
+                          borderColor: filters.subCategory.includes(subCat) ? '#4f46e5' : '#d1d5db',
                         }}
                         className="w-5 h-5 border rounded-md mr-3 flex items-center justify-center transition-colors"
                       >
@@ -681,7 +721,7 @@ const Collection = () => {
                       </motion.span>
                       <span className="text-gray-700">{subCat}</span>
                       <span className="ml-auto text-gray-400 text-sm">
-                        ({processedProducts.filter(p => p.subCategory === subCat).length})
+                        ({processedProducts.filter((p) => p.subCategory === subCat).length})
                       </span>
                     </motion.label>
                   </motion.li>
@@ -690,26 +730,22 @@ const Collection = () => {
             </motion.div>
           )}
 
-          {/* Price Range*/}
+          {/* Price Range */}
           <motion.div className="mb-8">
-            <h5 className="font-bold text-lg mb-4 flex items-center justify-between">
+            <h5 className="font-bold text-lg mb-4 flex items-center justify-between text-gray-900">
               <span>Price Range</span>
               {filters.priceRange.length > 0 && (
-                <button 
+                <button
                   onClick={() => updateFilter('priceRange', [])}
-                  className="text-xs text-tertiary hover:text-tertiary-dark"
+                  className="text-xs text-indigo-600 hover:text-indigo-800"
                 >
                   Clear
                 </button>
               )}
             </h5>
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {PRICE_RANGES.map((range) => (
-                <motion.li 
-                  key={range.label}
-                  whileHover={{ x: 5 }}
-                  className="flex items-center"
-                >
+                <motion.li key={range.label} whileHover={{ x: 5 }} className="flex items-center">
                   <motion.input
                     type="checkbox"
                     id={`price-${range.label}`}
@@ -724,12 +760,8 @@ const Collection = () => {
                   >
                     <motion.span
                       animate={{
-                        backgroundColor: filters.priceRange.includes(range.label) 
-                          ? 'var(--tertiary)' 
-                          : 'var(--white)',
-                        borderColor: filters.priceRange.includes(range.label) 
-                          ? 'var(--tertiary)' 
-                          : 'var(--gray-300)'
+                        backgroundColor: filters.priceRange.includes(range.label) ? '#4f46e5' : '#ffffff',
+                        borderColor: filters.priceRange.includes(range.label) ? '#4f46e5' : '#d1d5db',
                       }}
                       className="w-5 h-5 border rounded-md mr-3 flex items-center justify-center transition-colors"
                     >
@@ -748,17 +780,17 @@ const Collection = () => {
             </ul>
           </motion.div>
 
-          {/* Sort*/}
+          {/* Sort */}
           <motion.div className="mb-8">
-            <h5 className="font-bold text-lg mb-4">Sort By</h5>
+            <h5 className="font-bold text-lg mb-4 text-gray-900">Sort By</h5>
             <motion.select
               whileHover={{ scale: 1.01 }}
               whileFocus={{ scale: 1.02 }}
               value={filters.sort}
               onChange={(e) => updateFilter('sort', e.target.value)}
-              className="w-full border border-gray-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-tertiary focus:border-transparent appearance-none bg-white bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWNoZXZyb24tZG93biI+PHBhdGggZD0ibTYgOSA2IDYgNi02Ii8+PC9zdmc+')] bg-no-repeat bg-[center_right_1rem]"
+              className="w-full border border-gray-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-indigo-600 focus:border-transparent appearance-none bg-white bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWNoZXZyb24tZG93biI+PHBhdGggZD0ibTYgOSA2IDYgNi02Ii8+PC9zdmc+')] bg-no-repeat bg-[center_right_1rem]"
             >
-              {SORT_OPTIONS.map(option => (
+              {SORT_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -766,19 +798,26 @@ const Collection = () => {
             </motion.select>
           </motion.div>
 
-          {/* Clear all filters (same as before) */}
+          {/* Clear Filters */}
           <motion.button
-            whileHover={{ 
-              scale: 1.03,
-              backgroundColor: 'var(--tertiary-dark)'
-            }}
+            whileHover={{ scale: 1.03, backgroundColor: '#4338ca' }}
             whileTap={{ scale: 0.97 }}
             onClick={resetFilters}
-            disabled={!filters.category.length && !filters.subCategory.length && !filters.priceRange.length && filters.sort === 'relevant' && !filters.search}
+            disabled={
+              !filters.category.length &&
+              !filters.subCategory.length &&
+              !filters.priceRange.length &&
+              filters.sort === 'relevant' &&
+              !filters.search
+            }
             className={`w-full py-3 rounded-xl font-medium transition-all ${
-              !filters.category.length && !filters.subCategory.length && !filters.priceRange.length && filters.sort === 'relevant' && !filters.search
+              !filters.category.length &&
+              !filters.subCategory.length &&
+              !filters.priceRange.length &&
+              filters.sort === 'relevant' &&
+              !filters.search
                 ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                : 'bg-tertiary text-white hover:bg-tertiary-dark'
+                : 'bg-indigo-600 text-white hover:bg-indigo-700'
             }`}
           >
             Clear all filters
@@ -786,34 +825,29 @@ const Collection = () => {
         </motion.aside>
 
         {/* Product Grid */}
-        <motion.main 
+        <motion.main
           layout
           animate={controls}
-          variants={{
-            reset: {
-              opacity: [1, 0.7, 1],
-              transition: { duration: 0.5 }
-            }
-          }}
+          variants={{ reset: { opacity: [1, 0.7, 1], transition: { duration: 0.5 } } }}
           className="bg-white p-6 rounded-xl flex-1 shadow-lg"
         >
           {/* Results Count */}
-          <motion.div 
-            layout
-            className="flex justify-between items-center mb-6"
-          >
-            <motion.p className="text-gray-600">
-              Showing {filteredProducts.length > 0 
-                ? `${(filters.page - 1) * ITEMS_PER_PAGE + 1}-${Math.min(filters.page * ITEMS_PER_PAGE, filteredProducts.length + (filters.page - 1) * ITEMS_PER_PAGE)}` 
-                : '0'} of {processedProducts.length} products
+          <motion.div layout className="flex justify-between items-center mb-6">
+            <motion.p className="text-gray-600 text-sm">
+              Showing{' '}
+              {filteredProducts.length > 0
+                ? `${(filters.page - 1) * ITEMS_PER_PAGE + 1}-${Math.min(
+                    filters.page * ITEMS_PER_PAGE,
+                    filteredProducts.length + (filters.page - 1) * ITEMS_PER_PAGE
+                  )}`
+                : '0'}{' '}
+              of {processedProducts.length} products
             </motion.p>
-            
-            {/* Mobile Sort Toggle */}
             <motion.button
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               onClick={toggleMobileFilters}
-              className="lg:hidden flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg text-sm"
+              className="xs:hidden flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg text-sm"
             >
               <FiFilter />
               <span>Filters & Sort</span>
@@ -822,12 +856,12 @@ const Collection = () => {
 
           {/* Product Grid */}
           <AnimatePresence mode="wait">
-            <motion.div 
+            <motion.div
               key={`products-${filters.page}-${filters.sort}-${filters.search}`}
               variants={ANIMATION_VARIANTS.container}
               initial="hidden"
               animate="show"
-              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6 xs:grid-cols-4"
+              className="grid xs:grid-cols-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6"
             >
               {filteredProducts.length > 0 ? (
                 filteredProducts.map((product) => (
@@ -837,13 +871,17 @@ const Collection = () => {
                     whileHover="hover"
                     whileTap="tap"
                     layoutId={`product-${product.id}`}
-                    className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow"
+                    className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300"
                   >
                     <Item product={product} />
                     <div className="p-4">
-                      <h3 className="font-medium text-gray-900 truncate">{product.name}</h3>
+                      <h3 className="font-medium text-gray-900 truncate text-sm">
+                        {product.category === 'Egypt Abaya' ? 'Abaaya' : product.name}
+                      </h3>
                       <div className="flex justify-between items-center mt-2">
-                        <span className="font-bold text-gray-900">${product.price?.toFixed(2)}</span>
+                        <span className="font-bold text-gray-900 text-lg">
+                          ₵{product.price?.toFixed(2)}
+                        </span>
                         {product.avgRating > 0 && (
                           <div className="flex items-center">
                             {renderStars(product.avgRating)}
@@ -857,24 +895,19 @@ const Collection = () => {
                   </motion.article>
                 ))
               ) : (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   className="col-span-full text-center py-12"
                 >
                   <motion.div
-                    animate={{ 
-                      y: [0, -10, 0],
-                      transition: { repeat: Infinity, duration: 2 }
-                    }}
+                    animate={{ y: [0, -10, 0], transition: { repeat: Infinity, duration: 2 } }}
                     className="inline-block mb-6"
                   >
                     <FiSearch className="text-4xl text-gray-400" />
                   </motion.div>
-                  <h3 className="text-xl font-medium text-gray-700 mb-2">
-                    No products found
-                  </h3>
+                  <h3 className="text-xl font-medium text-gray-700 mb-2">No products found</h3>
                   <p className="text-gray-500 mb-6">
                     Try adjusting your search or filter to find what you're looking for.
                   </p>
@@ -882,7 +915,7 @@ const Collection = () => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={resetFilters}
-                    className="px-6 py-2 bg-tertiary text-white rounded-lg font-medium hover:bg-tertiary-dark transition-colors"
+                    className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
                   >
                     Reset all filters
                   </motion.button>
@@ -893,30 +926,28 @@ const Collection = () => {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <motion.div 
+            <motion.div
               layout
               className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-12"
             >
               <motion.p className="text-sm text-gray-500">
                 Page {filters.page} of {totalPages}
               </motion.p>
-              
               <div className="flex items-center gap-2">
-                <motion.button 
+                <motion.button
                   whileHover={{ scale: filters.page !== 1 ? 1.05 : 1 }}
                   whileTap={{ scale: filters.page !== 1 ? 0.95 : 1 }}
-                  disabled={filters.page === 1} 
+                  disabled={filters.page === 1}
                   onClick={() => updateFilter('page', filters.page - 1)}
                   className={`flex items-center gap-1 px-4 py-2 rounded-lg ${
-                    filters.page === 1 
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    filters.page === 1
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  <FiChevronLeft /> 
+                  <FiChevronLeft />
                   <span>Previous</span>
                 </motion.button>
-
                 <div className="flex items-center gap-1">
                   {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
                     let page;
@@ -931,51 +962,48 @@ const Collection = () => {
                     }
 
                     return (
-                      <motion.button 
-                        key={page} 
+                      <motion.button
+                        key={page}
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                         onClick={() => updateFilter('page', page)}
                         className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          filters.page === page 
-                            ? "bg-tertiary text-white" 
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          filters.page === page
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
                         {page}
                       </motion.button>
                     );
                   })}
-
                   {totalPages > 5 && filters.page < totalPages - 2 && (
                     <span className="mx-1 text-gray-400">...</span>
                   )}
-
                   {totalPages > 5 && filters.page < totalPages - 2 && (
-                    <motion.button 
+                    <motion.button
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
                       onClick={() => updateFilter('page', totalPages)}
                       className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                        filters.page === totalPages 
-                          ? "bg-tertiary text-white" 
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        filters.page === totalPages
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
                       {totalPages}
                     </motion.button>
                   )}
                 </div>
-
-                <motion.button 
+                <motion.button
                   whileHover={{ scale: filters.page !== totalPages ? 1.05 : 1 }}
                   whileTap={{ scale: filters.page !== totalPages ? 0.95 : 1 }}
-                  disabled={filters.page === totalPages} 
+                  disabled={filters.page === totalPages}
                   onClick={() => updateFilter('page', filters.page + 1)}
                   className={`flex items-center gap-1 px-4 py-2 rounded-lg ${
-                    filters.page === totalPages 
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    filters.page === totalPages
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
                   <span>Next</span>
@@ -986,7 +1014,6 @@ const Collection = () => {
           )}
         </motion.main>
       </div>
-      
       <Footer />
     </motion.div>
   );
