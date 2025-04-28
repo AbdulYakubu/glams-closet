@@ -6,7 +6,7 @@ import Title from "../components/Title";
 
 const Contact = () => {
   return (
-    <section className="min-h-screen bg-primary py-16 text-gray-800 dark:text-white">
+    <section className="min-h-screen bg-primary py-16 text-gray-800 dark:bg-gray-900 dark:text-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

@@ -21,7 +21,9 @@ import TermsPage from './components/TermsPage'
 import PaymentMethodsPage from './components/PaymentMethodsPage'
 import PrivacyPage from './components/PrivacyPage'
 import CookiesPage from './components/CookiesPage'
-import { DarkModeProvider } from './context/DarkModeContext';
+//import { DarkModeProvider } from './context/DarkModeContext';
+import MyAccount from './pages/MyAccount'
+import TrackOrder from './components/TrackOrder'
 
 
 
@@ -32,14 +34,16 @@ const App = () => {
       <Header />
       <Routes>
         <Route path='/' element={<Home />} />
+        <Route path='/account' element={<MyAccount />} />
+        <Route path='/track-order/:orderId' element={<TrackOrder/>}/>
         <Route path='/cookies' element={<CookiesPage/>}/>
         <Route path='/terms' element={<TermsPage />} />
         <Route path='/privacy' element={<PrivacyPage/>}/>
-        <Route path='/Payment Methods' element={<PaymentMethodsPage/>}/>
+        <Route path='/Payment' element={<PaymentMethodsPage/>}/>
         <Route path='/blog' element={<BlogPage/>}/>
         <Route path='/returns' element={<Returns/> } />
-        <Route path='/help center' element={< HelpCenter/> } />
-        <Route path='/aboutus' element={<AboutUs/>}/>
+        <Route path='/help' element={< HelpCenter/> } />
+        <Route path='/about' element={<AboutUs/>}/>
         <Route path='/collection' element={<Collection />} />
         <Route path='/contact' element={<Contact />} />
         <Route path='/testimonial' element={<Testimonial />} />

@@ -78,22 +78,22 @@ const Categories = () => {
   };
 
   return (
-    <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-16 overflow-hidden">
+    <div className="relative max-full mx-auto px-4 sm:px-6 py-16 overflow-hidden bg-white dark:bg-gray-900 text-gray-50 dark:text-white">
       {/* Background decorative gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-gray-50 to-white -z-10" />
+      <div className="absolute inset-0 bg-gradient-to-b from-gray-50 to-white -z-10 dark:text-white" />
 
-      <div className="text-center mb-12">
+      <div className="text-center mb-12 dark:text-white">
         <Title 
           title1="Explore Our" 
           title2="Categories" 
-          title1Styles="text-4xl font-light text-gray-700" 
-          title2Styles="text-4xl font-bold text-gray-900"
+          title1Styles="text-4xl font-light text-gray-700 dark:text-white" 
+          title2Styles="text-4xl font-bold text-gray-900 dark:text-white"
         />
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="mt-4 text-gray-600 max-w-2xl mx-auto text-lg"
+          className="mt-4 text-gray-600  dark:text-white max-w-2xl mx-auto text-lg"
         >
           Discover our curated collection of premium modest wear and accessories
         </motion.p>
@@ -101,7 +101,7 @@ const Categories = () => {
 
       {isLoading && (
         <motion.div
-          className="absolute inset-0 bg-white/70 flex items-center justify-center z-10"
+          className="absolute inset-0 bg-white/70 dark:bg-gray-900 flex items-center justify-center z-10"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

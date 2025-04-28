@@ -26,6 +26,11 @@ const ShopContextProvider = (props) => {
     International: { fee: 60, freeThreshold: 500 },
   };
 
+  const convertPrice = (price) => {
+    const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
+    return `${currency}${numericPrice.toFixed(2)}`;
+  };
+
   const updateQuantity = (itemId, size, newQuantity) => {
     setCartItems((prevCart) => {
       const updatedCart = { ...prevCart };
@@ -251,6 +256,7 @@ const ShopContextProvider = (props) => {
     userLocation,
     setUserLocation,
     shippingRates,
+    convertPrice,
   };
 
   return (

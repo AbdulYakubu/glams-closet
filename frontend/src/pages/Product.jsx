@@ -1,50 +1,81 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { ShopContext } from '../context/ShopContext'
-import { FaStar, FaStarHalfStroke, FaTruckFast } from 'react-icons/fa6'
-import { FaHeart } from 'react-icons/fa'
-import { TbShoppingBagPlus } from 'react-icons/tb'
-import { motion } from 'framer-motion'
-import ProductDescription from '../components/ProductDescription'
-import ProductFeatures from '../components/ProductFeatures'
-import RelatedProducts from '../components/RelatedProducts'
-import Footer from '../components/Footer'
-import { Helmet } from 'react-helmet'
-import Title from '../components/Title'
+import React, { useContext, useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { ShopContext } from '../context/ShopContext';
+import { FaStar, FaStarHalfStroke, FaTruckFast } from 'react-icons/fa6';
+import { FaHeart } from 'react-icons/fa';
+import { TbShoppingBagPlus } from 'react-icons/tb';
+import { motion } from 'framer-motion';
+import { toast } from 'react-toastify';
+import ProductDescription from '../components/ProductDescription';
+import ProductFeatures from '../components/ProductFeatures';
+import RelatedProducts from '../components/RelatedProducts';
+import Footer from '../components/Footer';
+import { Helmet } from 'react-helmet';
+import Title from '../components/Title';
+import placeholderImage from '../assets/assets/placeholder.jpg'; // Placeholder for broken images
 
 const Product = () => {
-    const { productId } = useParams()
-    const { products, currency, addToCart, updateWishlist } = useContext(ShopContext)
-    const [product, setProduct] = useState(null)
-    const [image, setImage] = useState("")
-    const [size, setSize] = useState("")
-    const [wishlistActive, setWishlistActive] = useState(false)
-    const [selectedThumbnail, setSelectedThumbnail] = useState(0)
+    const { productId } = useParams();
+    const { products, currency, addToCart, updateWishlist, wishlistItems } = useContext(ShopContext);
+    const [product, setProduct] = useState(null);
+    const [image, setImage] = useState("");
+    const [size, setSize] = useState("");
+    const [imageErrors, setImageErrors] = useState({});
+    const [selectedThumbnail, setSelectedThumbnail] = useState(0);
 
     useEffect(() => {
-        const selectedProduct = products.find((item) => item._id === productId)
+        const selectedProduct = products.find((item) => item._id === productId);
         if (selectedProduct) {
-            setProduct(selectedProduct)
-            setImage(selectedProduct.image[0])
-            document.title = `${selectedProduct.name} | GlamsClost`
+            setProduct(selectedProduct);
+            setImage(selectedProduct.image[0]);
+            document.title = `${selectedProduct.name} | GlamsCloset`; // Fixed typo: GlamsClost -> GlamsCloset
         }
-    }, [productId, products])
+    }, [productId, products]);
+
+    const handleImageError = (index) => {
+        setImageErrors(prev => ({
+            ...prev,
+            [index]: true
+        }));
+        console.error(`Failed to load image at index ${index} for product ${productId}`);
+    };
+
+    const handleWishlistClick = () => {
+        updateWishlist(product._id);
+        toast.success(wishlistItems.includes(product._id) 
+            ? `${product.name} removed from wishlist` 
+            : `${product.name} added to wishlist`
+        );
+    };
+
+    const handleAddToCart = () => {
+        if (!size && product.sizes?.length > 0) {
+            toast.warning('Please select a size before adding to cart');
+            return;
+        }
+        addToCart(product._id, size || 'one-size');
+        toast.success(`${product.name} added to cart!`);
+    };
+
+    const formatPrice = (price) => {
+        const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
+        if (typeof numericPrice !== 'number' || isNaN(numericPrice)) {
+            console.warn(`Invalid price for product ${productId}: ${price}`);
+            return '0.00';
+        }
+        return numericPrice.toFixed(2);
+    };
 
     if (!product) {
         return (
-            <div className="flex justify-center items-center h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+            <div className="flex justify-center items-center h-screen bg-primary dark:bg-gray-900">
                 <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    className="w-10 h-10 border-4 border-gray-300 border-t-gray-600 rounded-full"
+                    className="w-10 h-10 border-4 border-gray-300 dark:border-gray-600 border-t-indigo-600 dark:border-t-indigo-400 rounded-full"
                 />
             </div>
-        )
-    }
-
-    const handleWishlistClick = () => {
-        updateWishlist(product._id)
-        setWishlistActive(!wishlistActive)
+        );
     }
 
     const containerVariants = {
@@ -56,7 +87,7 @@ const Product = () => {
                 when: "beforeChildren"
             }
         }
-    }
+    };
 
     const itemVariants = {
         hidden: { y: 20, opacity: 0 },
@@ -68,12 +99,12 @@ const Product = () => {
                 ease: "easeOut"
             }
         }
-    }
+    };
 
     return (
         <>
             <Helmet>
-                <title>{product.name} | GlamsClost</title>
+                <title>{product.name} | GlamsCloset</title>
                 <meta name="description" content={product.description.substring(0, 160)} />
             </Helmet>
 
@@ -81,24 +112,24 @@ const Product = () => {
                 initial="hidden"
                 animate="visible"
                 variants={containerVariants}
-                className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100"
+                className="min-h-screen bg-primary dark:bg-gray-900"
             >
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div className="max-full mx-auto px-4 sm:px-6 py-12">
                     
                     {/* Title Component */}
                     <Title 
                         title1="Product" 
                         title2="Details" 
-                        titleStyles="text-center mb-16"
-                        title1Styles="text-gray-900"
-                        paraStyles="text-gray-600"
+                        titleStyles="text-center mb-16 text-gray-900 dark:text-white"
+                        title1Styles="text-gray-900 dark:text-white"
+                        paraStyles="text-gray-600 dark:text-gray-300"
                         subtitle={`Check out the full details of ${product.name}, including sizes, features, and related picks.`}
                     />
 
                     {/* Product data */}
                     <motion.div 
                         variants={itemVariants}
-                        className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 backdrop-blur-sm bg-opacity-90"
+                        className="bg-primary dark:bg-gray-800 rounded-xl shadow-md overflow-hidden border border-gray-200 dark:border-gray-700 backdrop-blur-sm bg-opacity-90"
                     >
                         <div className="flex flex-col lg:flex-row gap-8 p-8">
                             
@@ -115,18 +146,24 @@ const Product = () => {
                                             whileTap={{ scale: 0.95 }}
                                             className={`cursor-pointer border-2 rounded-lg overflow-hidden transition-all duration-200 ${
                                                 selectedThumbnail === i 
-                                                    ? 'border-gray-900 ring-2 ring-gray-900/20' 
-                                                    : 'border-gray-200 hover:border-gray-400'
+                                                    ? 'border-indigo-600 ring-2 ring-indigo-600/20' 
+                                                    : 'border-gray-200 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-400'
                                             }`}
                                             onClick={() => {
-                                                setImage(item)
-                                                setSelectedThumbnail(i)
+                                                setImage(item);
+                                                setSelectedThumbnail(i);
                                             }}
+                                            role="button"
+                                            tabIndex={0}
+                                            onKeyDown={(e) => e.key === 'Enter' && setImage(item) && setSelectedThumbnail(i)}
+                                            aria-label={`Select thumbnail ${i + 1} for ${product.name}`}
                                         >
                                             <img
-                                                src={item}
-                                                alt={`Product thumbnail ${i + 1}`}
-                                                className="h-20 w-20 object-cover"
+                                                src={imageErrors[i] ? placeholderImage : item}
+                                                alt={`Thumbnail ${i + 1} of ${product.name}`}
+                                                className="h-20 w-20 object-contain"
+                                                loading="lazy"
+                                                onError={() => handleImageError(i)}
                                             />
                                         </motion.div>
                                     ))}
@@ -136,14 +173,20 @@ const Product = () => {
                                     animate={{ opacity: 1 }}
                                     key={image}
                                     transition={{ duration: 0.3 }}
-                                    className="flex-1 order-1 lg:order-2"
+                                    className="flex-1 order-1 lg:order-2 relative"
                                 >
-                                    <div className="border-2 border-gray-100 rounded-xl bg-white flex items-center justify-center p-8 h-full shadow-inner">
+                                    <div className="border-2 border-gray-100 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-900 flex items-center justify-center p-8 h-full shadow-inner">
                                         <img 
-                                            src={image} 
-                                            alt={product.name} 
+                                            src={imageErrors[selectedThumbnail] ? placeholderImage : image} 
+                                            alt={`Image of ${product.name}`}
                                             className="max-h-96 object-contain transition-opacity duration-300"
+                                            loading="lazy"
+                                            srcSet={`${image} 1x, ${image} 2x`}
+                                            sizes="(max-width: 640px) 100vw, 500px"
+                                            style={{ imageRendering: 'auto' }}
+                                            onError={() => handleImageError(selectedThumbnail)}
                                         />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent transition-all duration-300" />
                                     </div>
                                 </motion.div>
                             </motion.div>
@@ -153,12 +196,12 @@ const Product = () => {
                                 variants={itemVariants}
                                 className="flex-1"
                             >
-                                <div className="border-b border-gray-100 pb-6 mb-6">
+                                <div className="border-b border-gray-100 dark:border-gray-700 pb-6 mb-6">
                                     <motion.h1 
                                         initial={{ x: -10 }}
                                         animate={{ x: 0 }}
                                         transition={{ duration: 0.4 }}
-                                        className="text-3xl font-medium text-gray-900 tracking-tight"
+                                        className="text-3xl font-medium text-gray-900 dark:text-white tracking-tight"
                                     >
                                         {product.name}
                                     </motion.h1>
@@ -169,7 +212,7 @@ const Product = () => {
                                             ))}
                                             <FaStarHalfStroke className="w-4 h-4" />
                                         </div>
-                                        <span className="text-sm text-gray-600">122 reviews</span>
+                                        <span className="text-sm text-gray-600 dark:text-gray-400">122 reviews</span>
                                     </div>
                                 </div>
 
@@ -179,8 +222,8 @@ const Product = () => {
                                     transition={{ delay: 0.2 }}
                                     className="mb-8"
                                 >
-                                    <p className="text-2xl font-medium text-gray-900">{currency}{product.price}.00</p>
-                                    <p className="text-gray-700 mt-3 leading-relaxed">{product.description}</p>
+                                    <p className="text-2xl font-medium text-gray-900 dark:text-white">{currency}{formatPrice(product.price)}</p>
+                                    <p className="text-gray-700 dark:text-gray-300 mt-3 leading-relaxed">{product.description}</p>
                                 </motion.div>
 
                                 {/* Size selection */}
@@ -188,11 +231,11 @@ const Product = () => {
                                     variants={itemVariants}
                                     className="mb-8"
                                 >
-                                    <h3 className="text-sm font-medium text-gray-900 mb-3">Size</h3>
+                                    <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Size</h3>
                                     <div className="flex flex-wrap gap-2">
                                         {[...product.sizes].sort((a, b) => {
-                                            const order = ["S", "M", "L", "XL", "XXL"]
-                                            return order.indexOf(a) - order.indexOf(b)
+                                            const order = ["S", "M", "L", "XL", "XXL"];
+                                            return order.indexOf(a) - order.indexOf(b);
                                         }).map((item, i) => (
                                             <motion.button
                                                 key={i}
@@ -201,9 +244,11 @@ const Product = () => {
                                                 onClick={() => setSize(item)}
                                                 className={`px-4 py-2 border-2 rounded-md text-sm font-medium transition-all ${
                                                     item === size
-                                                        ? "bg-gray-900 text-white border-gray-900"
-                                                        : "bg-white text-gray-900 border-gray-200 hover:bg-gray-50"
+                                                        ? "bg-indigo-600 text-white border-indigo-600 dark:bg-indigo-500 dark:border-indigo-500"
+                                                        : "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
                                                 }`}
+                                                aria-pressed={item === size}
+                                                aria-label={`Select size ${item} for ${product.name}`}
                                             >
                                                 {item}
                                             </motion.button>
@@ -219,8 +264,9 @@ const Product = () => {
                                     <motion.button
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
-                                        onClick={() => addToCart(product._id, size)}
-                                        className="flex-1 bg-gray-900 hover:bg-gray-800 text-white py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200 shadow-md"
+                                        onClick={handleAddToCart}
+                                        className="flex-1 bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-600 text-white py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200 shadow-md"
+                                        aria-label={`Add ${product.name} to cart`}
                                     >
                                         <TbShoppingBagPlus className="text-lg" />
                                         Add to Cart
@@ -230,10 +276,13 @@ const Product = () => {
                                         whileTap={{ scale: 0.9 }}
                                         onClick={handleWishlistClick}
                                         className={`p-3 border-2 rounded-lg transition-colors duration-200 shadow-sm ${
-                                            wishlistActive 
-                                                ? "text-red-500 border-red-500 bg-red-50" 
-                                                : "text-gray-400 border-gray-200 hover:text-gray-600 hover:bg-gray-50"
+                                            wishlistItems.includes(product._id) 
+                                                ? "text-red-500 border-red-500 bg-red-50 dark:bg-red-900/20" 
+                                                : "text-gray-400 dark:text-gray-400 border-gray-200 dark:border-gray-600 hover:text-gray-600 dark:hover:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600"
                                         }`}
+                                        aria-label={wishlistItems.includes(product._id) 
+                                            ? `Remove ${product.name} from wishlist` 
+                                            : `Add ${product.name} to wishlist`}
                                     >
                                         <FaHeart />
                                     </motion.button>
@@ -242,19 +291,19 @@ const Product = () => {
                                 {/* Delivery Info */}
                                 <motion.div 
                                     variants={itemVariants}
-                                    className="border-t border-gray-100 pt-6"
+                                    className="border-t border-gray-100 dark:border-gray-700 pt-6"
                                 >
-                                    <div className="flex items-center gap-3 text-gray-700 mb-3">
-                                        <FaTruckFast className="text-gray-500 text-lg" />
+                                    <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300 mb-3">
+                                        <FaTruckFast className="text-gray-500 dark:text-gray-400 text-lg" />
                                         <span className="text-sm">Free delivery on orders over GHS 2000</span>
                                     </div>
-                                    <div className="text-sm text-gray-600 space-y-2">
+                                    <div className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
                                         <p className="flex items-center gap-2">
-                                            <span className="w-2 h-2 rounded-full bg-gray-400"></span>
+                                            <span className="w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-500"></span>
                                             Authenticity You Can Trust
                                         </p>
                                         <p className="flex items-center gap-2">
-                                            <span className="w-2 h-2 rounded-full bg-gray-400"></span>
+                                            <span className="w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-500"></span>
                                             Enjoy Cash on Delivery for Your Convenience
                                         </p>
                                     </div>
@@ -286,7 +335,7 @@ const Product = () => {
                 <Footer />
             </motion.div>
         </>
-    )
-}
+    );
+};
 
-export default Product
+export default Product;

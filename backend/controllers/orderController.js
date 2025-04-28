@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
 import axios from "axios";
@@ -41,7 +42,7 @@ const placeOrder = async (req, res) => {
         size: item.size || "",
         image: Array.isArray(item.image) ? item.image : [item.image || ""],
       })),
-      amount, 
+      amount,
       address: {
         firstName: address.firstName,
         lastName: address.lastName,
@@ -54,7 +55,9 @@ const placeOrder = async (req, res) => {
       },
       paymentMethod: "COD",
       payment: false,
+      paymentStatus: "pending",
       date: new Date(),
+      status: "Packing",
     };
 
     console.log("Saving COD order to MongoDB");
@@ -110,7 +113,7 @@ const placeOrderPayStack = async (req, res) => {
         size: item.size || "",
         image: Array.isArray(item.image) ? item.image : [item.image || ""],
       })),
-      amount, 
+      amount,
       address: {
         firstName: address.firstName || "",
         lastName: address.lastName || "",
@@ -125,6 +128,7 @@ const placeOrderPayStack = async (req, res) => {
       payment: false,
       paymentStatus: "pending",
       date: new Date(),
+      status: "Packing",
     };
 
     console.log("Saving order to MongoDB");
@@ -210,6 +214,7 @@ const paystackCallback = async (req, res) => {
         payment: true,
         paymentReference: paymentData.reference,
         paymentStatus: "completed",
+        status: "Packing",
       });
       await userModel.findByIdAndUpdate(paymentData.metadata.user_id, { cartData: {} });
       res.redirect(`${process.env.FRONTEND_URL}/orders?payment=success`);
@@ -248,6 +253,7 @@ const verifyPayStack = async (req, res) => {
         payment: true,
         paymentReference: paymentData.reference,
         paymentStatus: "completed",
+        status: "Packing",
       });
       await userModel.findByIdAndUpdate(userId, { cartData: {} });
       res.json({ success: true, message: "Payment verified successfully", orderId });
@@ -291,11 +297,66 @@ const userOrders = async (req, res) => {
 const updateStatus = async (req, res) => {
   try {
     const { orderId, status } = req.body;
+    if (!["Packing", "Shipped", "Out for Delivery", "Delivered"].includes(status)) {
+      return res.status(400).json({ success: false, message: "Invalid status" });
+    }
     await orderModel.findByIdAndUpdate(orderId, { status });
     res.json({ success: true, message: "Status Updated" });
   } catch (error) {
     console.error("Update Status Error:", error);
     res.json({ success: false, message: error.message });
+  }
+};
+
+const trackOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const userId = req.body.userId;
+
+    console.log("Tracking order:", { orderId, userId });
+
+    if (!orderId || !userId) {
+      return res.status(400).json({ success: false, message: "Order ID and user ID are required" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      return res.status(400).json({ success: false, message: "Invalid order ID format" });
+    }
+
+    const order = await orderModel
+      .findById(orderId)
+      .populate("items.productId", "name image");
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+    if (order.userId.toString() !== userId) {
+      return res.status(403).json({ success: false, message: "Unauthorized access to this order" });
+    }
+
+    res.json({
+      success: true,
+      order: {
+        orderId: order._id,
+        items: order.items.map((item) => ({
+          productId: item.productId._id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          size: item.size || "",
+          image: item.image.length > 0 ? item.image : item.productId.image || [],
+        })),
+        amount: order.amount,
+        address: order.address,
+        paymentMethod: order.paymentMethod,
+        payment: order.payment,
+        paymentStatus: order.paymentStatus,
+        date: order.date,
+        status: order.status,
+      },
+    });
+  } catch (error) {
+    console.error("Track Order Error:", error);
+    res.status(500).json({ success: false, message: error.message || "Failed to track order" });
   }
 };
 
@@ -307,4 +368,5 @@ export {
   allOrders,
   userOrders,
   updateStatus,
+  trackOrder,
 };

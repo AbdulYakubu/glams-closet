@@ -3,9 +3,9 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
 const registerUser = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { firstName, lastName, email, password } = req.body;
   try {
-    if (!name || !email || !password) {
+    if (!firstName || !lastName || !email || !password) {
       return res.status(400).json({ success: false, message: "All fields required" });
     }
 
@@ -15,7 +15,7 @@ const registerUser = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new userModel({ name, email, password: hashedPassword });
+    const user = new userModel({ firstName, lastName, email, password: hashedPassword });
     await user.save();
 
     res.json({ success: true, user });
@@ -74,4 +74,42 @@ const adminLogin = async (req, res) => {
   }
 };
 
-export { registerUser, loginUser, adminLogin };
+const getUserProfile = async (req, res) => {
+  try {
+    console.log("req.body.userId:", req.body.userId); // Debug
+    if (!req.body.userId) {
+      return res.status(400).json({ success: false, message: "User ID not provided" });
+    }
+
+    const user = await userModel.findById(req.body.userId).select("-password");
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Handle schema mismatch for old user documents
+    const firstName = user.firstName || (user.name ? user.name.split(" ")[0] : "Unknown");
+    const lastName = user.lastName || (user.name ? user.name.split(" ").slice(1).join(" ") : "Unknown");
+
+    res.json({
+      success: true,
+      user: {
+        firstName,
+        lastName,
+        email: user.email,
+        phone: user.phone || "",
+        address: user.address || {
+          street: "",
+          city: "",
+          region: "",
+          digitalAddress: "",
+          country: "Ghana",
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Get profile error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export { registerUser, loginUser, adminLogin, getUserProfile };

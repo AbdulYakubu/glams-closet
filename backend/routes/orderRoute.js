@@ -7,6 +7,7 @@ import {
   updateStatus,
   userOrders,
   verifyPayStack,
+  trackOrder,
 } from "../controllers/orderController.js";
 import adminAuth from "../middleware/adminAuth.js";
 import authUser from "../middleware/authUser.js";
@@ -28,6 +29,7 @@ orderRouter.get("/paystack/callback", paystackCallback);
 orderRouter.get("/verifypaystack/:reference", authUser, verifyPayStack);
 
 // User routes
-orderRouter.get("/userorders", authUser, userOrders); // Changed from POST to GET
+orderRouter.get("/userorders", authUser, userOrders);
+orderRouter.get("/track/:orderId", authUser, trackOrder);
 
 export default orderRouter;

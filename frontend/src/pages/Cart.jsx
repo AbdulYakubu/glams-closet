@@ -20,6 +20,11 @@ const Cart = () => {
   const [quantities, setQuantities] = useState({});
   const [isRemoving, setIsRemoving] = useState(false);
 
+  // Debug re-renders
+  useEffect(() => {
+    console.log("Cart re-rendered");
+  });
+
   useEffect(() => {
     if (products.length > 0) {
       const tempData = [];
@@ -83,48 +88,49 @@ const Cart = () => {
   };
 
   return (
-    <div className="min-h-screen bg-primary pb-16">
+    <div className="min-h-screen bg-primary dark:bg-gray-900 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 xs:px-8 py-12">
         {/* Title */}
         <div className="flex items-center gap-x-4 mb-8">
           <Title 
             title1="Your" 
             title2="Cart" 
-            title1Styles="text-3xl font-light" 
-            title2Styles="text-3xl font-semibold"
+            title1Styles="text-3xl font-light text-gray-700 dark:text-gray-300" 
+            title2Styles="text-3xl font-semibold text-indigo-600 dark:text-indigo-400"
           />
-          <span className="text-gray-500 text-lg">
+          <span className="text-gray-500 dark:text-gray-400 text-lg">
             ({getCartCount()} {getCartCount() === 1 ? 'Item' : 'Items'})
           </span>
         </div>
 
         {/* Cart Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 ">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
-          <div className="xs:col-span-2">
+          <div className="lg:col-span-2">
             {cartData.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="bg-white rounded-xl shadow-sm p-8 text-center border border-gray-50"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 text-center border border-gray-200 dark:border-gray-700"
               >
-                <RiShoppingBagLine className="mx-auto text-5xl text-gray-300 mb-4" />
-                <h3 className="text-xl font-medium text-gray-700 mb-2">
+                <RiShoppingBagLine className="mx-auto text-5xl text-gray-300 dark:text-gray-600 mb-4" />
+                <h3 className="text-xl font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Your cart is empty
                 </h3>
-                <p className="text-gray-500 mb-6">
+                <p className="text-gray-500 dark:text-gray-400 mb-6">
                   Looks like you haven't added anything to your cart yet
                 </p>
                 <button
                   onClick={() => navigate('/collection')}
-                  className="bg-secondary text-white px-6 py-3 rounded-lg hover:bg-primary-dark transition-colors"
+                  className="bg-indigo-600 dark:bg-indigo-700 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-800 transition-colors"
+                  aria-label="Continue shopping"
                 >
                   Continue Shopping
                 </button>
               </motion.div>
             ) : (
               <AnimatePresence>
-                {cartData.map((item, i) => {
+                {cartData.map((item) => {
                   const productData = products.find(
                     (product) => product._id === item._id
                   );
@@ -142,9 +148,9 @@ const Cart = () => {
                       animate="visible"
                       exit="exit"
                       layout
-                      className="bg-white rounded-xl shadow-sm p-4 mb-4 hover:shadow-md transition-shadow border border-gray-20"
+                      className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 mb-4 hover:shadow-md transition-shadow border border-gray-200 dark:border-gray-700"
                     >
-                      <div className="flex gap-4 items-start ">
+                      <div className="flex gap-4 items-start">
                         <motion.img
                           src={productData.image[0]}
                           alt={productData.name}
@@ -155,42 +161,48 @@ const Cart = () => {
                         <div className="flex-1">
                           <div className="flex justify-between items-start mb-2">
                             <div>
-                              <h3 className="font-medium text-gray-900 line-clamp-1">
+                              <h3 className="font-medium text-gray-900 dark:text-gray-300 line-clamp-1">
                                 {productData.name}
                               </h3>
-                              <p className="text-sm text-gray-500">
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
                                 Size: {item.size}
                               </p>
                             </div>
                             <button
                               onClick={() => removeItem(item._id, item.size)}
-                              className="text-gray-400 hover:text-red-500 transition-colors"
+                              className="text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                               disabled={isRemoving}
+                              aria-label={`Remove ${productData.name} size ${item.size} from cart`}
+                              role="button"
                             >
                               <FiTrash2 />
                             </button>
                           </div>
 
                           <div className="flex justify-between items-center mt-4">
-                            <div className="flex items-center border rounded-lg overflow-hidden">
+                            <div className="flex items-center border rounded-lg overflow-hidden border-gray-300 dark:border-gray-700">
                               <button
                                 onClick={() => decrement(item._id, item.size)}
-                                className="px-3 py-1 text-gray-600 hover:bg-gray-100 transition-colors"
+                                className="px-3 py-1 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                                 disabled={quantities[key] <= 1}
+                                aria-label={`Decrease quantity of ${productData.name} size ${item.size}`}
+                                role="button"
                               >
                                 <FiMinus />
                               </button>
-                              <span className="px-4 text-gray-800">
+                              <span className="px-4 text-gray-800 dark:text-gray-300">
                                 {quantities[key] || 1}
                               </span>
                               <button
                                 onClick={() => increment(item._id, item.size)}
-                                className="px-3 py-1 text-gray-600 hover:bg-gray-100 transition-colors"
+                                className="px-3 py-1 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                aria-label={`Increase quantity of ${productData.name} size ${item.size}`}
+                                role="button"
                               >
                                 <FiPlus />
                               </button>
                             </div>
-                            <span className="font-medium text-gray-900">
+                            <span className="font-medium text-gray-900 dark:text-gray-300">
                               {currency}{itemTotal.toFixed(2)}
                             </span>
                           </div>
@@ -211,8 +223,8 @@ const Cart = () => {
               transition={{ delay: 0.2 }}
               className="lg:col-span-1"
             >
-              <div className="bg-white rounded-xl shadow-sm p-6 sticky top-4 ">
-                <h3 className="text-lg font-semibold text-gray-900 mb-6">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 sticky top-4 border border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-300 mb-6">
                   Order Summary
                 </h3>
                 
@@ -220,14 +232,16 @@ const Cart = () => {
                 
                 <button
                   onClick={() => navigate("/place-order")}
-                  className="w-full bg-secondary text-white py-3 rounded-lg font-medium hover:bg-primary-dark transition-colors mt-6"
+                  className="w-full bg-indigo-600 dark:bg-indigo-700 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 dark:hover:bg-indigo-800 transition-colors mt-6"
+                  aria-label="Proceed to checkout"
                 >
                   Proceed to Checkout
                 </button>
 
                 <button
                   onClick={() => navigate("/collection")}
-                  className="w-full mt-4 text-primary border border-primary py-3 rounded-lg font-medium hover:bg-primary/5 transition-colors"
+                  className="w-full mt-4 text-indigo-600 dark:text-indigo-400 border border-indigo-600 dark:border-indigo-400 py-3 rounded-lg font-medium hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                  aria-label="Continue shopping"
                 >
                   Continue Shopping
                 </button>

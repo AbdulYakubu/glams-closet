@@ -28,13 +28,13 @@ const Banner = () => {
       whileInView="show"
       variants={container}
       viewport={{ once: true, margin: "-100px" }}
-      className='mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8'
+      className='mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-900'
     >
-      <div className='flex flex-col lg:flex-row bg-white rounded-3xl overflow-hidden shadow-lg'>
+      <div className='flex flex-col xs:flex-row bg-white dark:bg-gray-900 dark:text-white rounded-3xl overflow-hidden shadow-lg'>
         {/* Left Side */}
         <motion.div 
           variants={item}
-          className='lg:flex-1 px-6 py-8 xl:px-12 flex flex-col justify-center order-2 lg:order-1'
+          className='xs:flex-1 px-6 py-8 xl:px-12 flex flex-col justify-center order-2 xs:order-1'
         >
           <motion.h2 
             variants={item}

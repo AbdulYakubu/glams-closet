@@ -1,12 +1,12 @@
-
-
 import React, { useContext, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { FaHeart, FaRegHeart, FaStar } from 'react-icons/fa';
 import { TbShoppingBagPlus } from 'react-icons/tb';
+import { Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import Title from './Title';
 import { ShopContext } from '../context/ShopContext';
-import {Link } from 'react-router-dom'
+import placeholderImage from '../assets/assets/placeholder.jpg'; 
 
 const PopularProducts = () => {
   const { 
@@ -15,18 +15,20 @@ const PopularProducts = () => {
     updateWishlist, 
     wishlistItems,
     currency,
+    convertPrice,
     loading: contextLoading 
   } = useContext(ShopContext);
   
   const [popularProducts, setPopularProducts] = useState([]);
   const [selectedSizes, setSelectedSizes] = useState({});
+  const [imageErrors, setImageErrors] = useState({});
   const isLoading = contextLoading || products.length === 0;
 
   useEffect(() => {
     if (!contextLoading && products.length > 0) {
       const popular = products
         .filter(item => item.popular)
-        .sort((a, b) => b.rating - a.rating)
+        .sort((a, b) => (b.rating || 0) - (a.rating || 0))
         .slice(0, 5);
       setPopularProducts(popular);
     }
@@ -39,22 +41,35 @@ const PopularProducts = () => {
     }));
   };
 
-  const handleAddToCart = (productId) => {
+  const handleAddToCart = (productId, productName) => {
     const size = selectedSizes[productId];
-    if (size) {
-      addToCart(productId, size);
+    if (size || popularProducts.find(p => p._id === productId)?.sizes?.length === 0) {
+      addToCart(productId, size || 'one-size');
+      toast.success(`${productName} added to cart!`);
     } else {
-      // For products without sizes, add with default size
-      if (popularProducts.find(p => p._id === productId)?.sizes?.length === 0) {
-        addToCart(productId, 'one-size');
-      } else {
-        alert('Please select a size before adding to cart');
-      }
+      toast.warning('Please select a size before adding to cart');
     }
+  };
+
+  const handleWishlistToggle = (productId, productName) => {
+    updateWishlist(productId);
+    const isAdded = wishlistItems.includes(productId);
+    toast.success(isAdded ? 
+      `${productName} removed from wishlist` : 
+      `${productName} added to wishlist`
+    );
   };
 
   const isInWishlist = (productId) => {
     return wishlistItems.includes(productId);
+  };
+
+  const handleImageError = (productId) => {
+    setImageErrors(prev => ({
+      ...prev,
+      [productId]: true
+    }));
+    console.error(`Failed to load image for product ${productId}`);
   };
 
   // Animation variants
@@ -88,18 +103,19 @@ const PopularProducts = () => {
       animate="visible"
       variants={containerVariants}
       viewport={{ once: true, margin: "0px 0px -100px 0px" }}
-      className="py-16 bg-primary"
+      className="py-16 bg-primary dark:bg-gray-900"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <Title 
           title1="Popular"
           title2="Products"
-          titleStyles="mb-12 text-white"
-          paraStyles="text-gray-200"
+          titleStyles="mb-12 text-gray-900 dark:text-white"
+          subtitle="Discover our top-rated items"
+          paraStyles="text-gray-600 dark:text-gray-300"
         />
 
         {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+          <div className="grid xs:grid-cols-5 grid-cols-1 md:grid-cols-4  gap-6">
             {[...Array(5)].map((_, i) => (
               <motion.div
                 key={i}
@@ -111,7 +127,7 @@ const PopularProducts = () => {
                   duration: 1.5,
                   delay: i * 0.1
                 }}
-                className="bg-secondary-light rounded-xl h-[400px]"
+                className="bg-white dark:bg-gray-800 rounded-xl h-[300px] shadow-sm"
               />
             ))}
           </div>
@@ -120,7 +136,7 @@ const PopularProducts = () => {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="grid grid-cols-1 xs:grid-cols-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xs:grid-cols-5 gap-6"
           >
             {popularProducts.map((product) => (
               <motion.div 
@@ -130,26 +146,35 @@ const PopularProducts = () => {
                   y: -8,
                   transition: { duration: 0.2 }
                 }}
-                className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col h-full"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden flex flex-col h-full border border-gray-100 dark:border-gray-700"
               >
                 {/* Product Image */}
                 <div className="relative aspect-square overflow-hidden">
-                  <Link to={`/product/${product._id}`}>
+                  <Link to={`/product/${product._id}`} aria-label={`View ${product.name}`}>
                     <motion.img 
-                      src={product.image[0]} 
-                      alt={product.name}
-                      className="w-full h-full object-cover"
+                      src={imageErrors[product._id] ? placeholderImage : product.image[0]} 
+                      alt={`Image of ${product.name}`}
+                      className="w-full h-full object-contain"
                       whileHover={{ scale: 1.05 }}
                       transition={{ duration: 0.3 }}
+                      loading="lazy"
+                      srcSet={`${product.image[0]} 1x, ${product.image[0]} 2x`}
+                      sizes="(max-width: 640px) 100vw, 300px"
+                      style={{ imageRendering: 'auto' }}
+                      onError={() => handleImageError(product._id)}
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent group-hover:from-black/10 transition-all duration-300" />
                   </Link>
                   <button 
-                    onClick={() => updateWishlist(product._id)}
+                    onClick={() => handleWishlistToggle(product._id, product.name)}
                     className={`absolute top-3 right-3 p-2 rounded-full transition-all ${
                       isInWishlist(product._id) 
-                        ? 'text-red-500 bg-white/90 shadow-sm' 
-                        : 'text-gray-400 bg-white/80 hover:text-red-500 shadow-sm'
+                        ? 'text-red-500 bg-white/90 dark:bg-gray-800/90 shadow-sm' 
+                        : 'text-gray-400 bg-white/80 dark:bg-gray-800/80 hover:text-red-500 shadow-sm'
                     }`}
+                    aria-label={isInWishlist(product._id) ? 
+                      `Remove ${product.name} from wishlist` : 
+                      `Add ${product.name} to wishlist`}
                   >
                     {isInWishlist(product._id) ? (
                       <FaHeart className="text-lg" />
@@ -166,8 +191,8 @@ const PopularProducts = () => {
 
                 {/* Product Info */}
                 <div className="p-4 flex flex-col flex-1">
-                  <Link to={`/product/${product._id}`} className="hover:underline">
-                    <h3 className="font-medium text-gray-900 mb-1 line-clamp-1">{product.name}</h3>
+                  <Link to={`/product/${product._id}`} className="hover:underline" aria-label={`View ${product.name}`}>
+                    <h3 className="font-medium text-gray-900 dark:text-white mb-1 line-clamp-1">{product.name}</h3>
                   </Link>
                   
                   {/* Rating */}
@@ -176,17 +201,17 @@ const PopularProducts = () => {
                       {[...Array(5)].map((_, i) => (
                         <FaStar 
                           key={i} 
-                          className={`w-3 h-3 ${i < Math.floor(product.rating) ? 'fill-current' : 'text-gray-300'}`}
+                          className={`w-3 h-3 ${i < Math.floor(product.rating || 0) ? 'fill-current' : 'text-gray-300'}`}
                         />
                       ))}
                     </div>
-                    <span className="text-xs text-gray-500">({product.reviews || 0})</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">({product.reviews || 0})</span>
                   </div>
                   
-                  {/* Size Selection - Only show if product has sizes */}
+                  {/* Size Selection */}
                   {product.sizes?.length > 0 && (
                     <div className="mb-4">
-                      <h4 className="text-xs font-medium text-gray-500 mb-2">SIZE</h4>
+                      <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">SIZE</h4>
                       <div className="flex flex-wrap gap-1">
                         {product.sizes.map((size) => (
                           <motion.button
@@ -195,8 +220,8 @@ const PopularProducts = () => {
                             whileTap={{ scale: 0.95 }}
                             className={`px-2 py-1 text-xs rounded-md ${
                               selectedSizes[product._id] === size
-                                ? 'bg-gray-900 text-white'
-                                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                                ? 'bg-indigo-600 text-white dark:bg-indigo-500'
+                                : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
                             }`}
                           >
                             {size}
@@ -208,13 +233,14 @@ const PopularProducts = () => {
 
                   {/* Price and Add to Cart */}
                   <div className="mt-auto flex justify-between items-center">
-                    <span className="font-bold text-gray-900">
-                      {currency}{product.price.toFixed(2)}
+                    <span className="font-bold text-gray-900 dark:text-white">
+                      {currency}{(product.price).toFixed(2)}
                     </span>
                     <motion.button
-                      onClick={() => handleAddToCart(product._id)}
+                      onClick={() => handleAddToCart(product._id, product.name)}
                       whileTap={{ scale: 0.9 }}
-                      className="p-2 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-colors shadow-md"
+                      className="p-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-full hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors shadow-md"
+                      aria-label={`Add ${product.name} to cart`}
                     >
                       <TbShoppingBagPlus className="text-lg" />
                     </motion.button>

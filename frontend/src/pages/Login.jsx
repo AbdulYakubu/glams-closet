@@ -1,4 +1,3 @@
-
 import React, { useContext, useEffect, useState } from "react";
 import { ShopContext } from "../context/ShopContext";
 import login from "../assets/assets/login.png";
@@ -13,7 +12,8 @@ const Login = () => {
   const navigate = useNavigate();
 
   const [currState, setCurrState] = useState("Sign Up");
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -30,7 +30,8 @@ const Login = () => {
     if (!password) newErrors.password = "Password is required";
     else if (password.length < 8) newErrors.password = "Password must be at least 8 characters";
     if (currState === "Sign Up" && !isAdminLogin) {
-      if (!name) newErrors.name = "Name is required";
+      if (!firstName) newErrors.firstName = "First name is required";
+      if (!lastName) newErrors.lastName = "Last name is required";
       if (!confirmPassword) newErrors.confirmPassword = "Please confirm your password";
       else if (password !== confirmPassword) newErrors.confirmPassword = "Passwords do not match";
     }
@@ -43,8 +44,11 @@ const Login = () => {
     delete newErrors[field];
     setErrors(newErrors);
     switch (field) {
-      case "name":
-        setName(value);
+      case "firstName":
+        setFirstName(value);
+        break;
+      case "lastName":
+        setLastName(value);
         break;
       case "email":
         setEmail(value);
@@ -69,7 +73,7 @@ const Login = () => {
       const endpoint = isAdminLogin ? "admin" : currState === "Sign Up" ? "register" : "login";
       const payload =
         currState === "Sign Up" && !isAdminLogin
-          ? { name, email, password }
+          ? { firstName, lastName, email, password }
           : { email, password };
 
       const response = await axios.post(`${backendUrl}/api/user/${endpoint}`, payload);
@@ -146,28 +150,52 @@ const Login = () => {
             </h3>
 
             {currState === "Sign Up" && !isAdminLogin && (
-              <div>
-                <label htmlFor="name" className="text-sm font-medium text-gray-600">
-                  Name
-                </label>
-                <input
-                  onChange={(e) => handleInputChange("name", e.target.value)}
-                  value={name}
-                  type="text"
-                  placeholder="Enter your name"
-                  className={`w-full mt-1 px-4 py-2 border ${
-                    errors.name ? "border-red-500" : "border-gray-300"
-                  } rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
-                  required
-                  aria-invalid={!!errors.name}
-                  aria-describedby={errors.name ? "name-error" : undefined}
-                />
-                {errors.name && (
-                  <p id="name-error" className="text-red-500 text-xs mt-1">
-                    {errors.name}
-                  </p>
-                )}
-              </div>
+              <>
+                <div>
+                  <label htmlFor="firstName" className="text-sm font-medium text-gray-600">
+                    First Name
+                  </label>
+                  <input
+                    onChange={(e) => handleInputChange("firstName", e.target.value)}
+                    value={firstName}
+                    type="text"
+                    placeholder="Enter your first name"
+                    className={`w-full mt-1 px-4 py-2 border ${
+                      errors.firstName ? "border-red-500" : "border-gray-300"
+                    } rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
+                    required
+                    aria-invalid={!!errors.firstName}
+                    aria-describedby={errors.firstName ? "firstName-error" : undefined}
+                  />
+                  {errors.firstName && (
+                    <p id="firstName-error" className="text-red-500 text-xs mt-1">
+                      {errors.firstName}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label htmlFor="lastName" className="text-sm font-medium text-gray-600">
+                    Last Name
+                  </label>
+                  <input
+                    onChange={(e) => handleInputChange("lastName", e.target.value)}
+                    value={lastName}
+                    type="text"
+                    placeholder="Enter your last name"
+                    className={`w-full mt-1 px-4 py-2 border ${
+                      errors.lastName ? "border-red-500" : "border-gray-300"
+                    } rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
+                    required
+                    aria-invalid={!!errors.lastName}
+                    aria-describedby={errors.lastName ? "lastName-error" : undefined}
+                  />
+                  {errors.lastName && (
+                    <p id="lastName-error" className="text-red-500 text-xs mt-1">
+                      {errors.lastName}
+                    </p>
+                  )}
+                </div>
+              </>
             )}
 
             <div>

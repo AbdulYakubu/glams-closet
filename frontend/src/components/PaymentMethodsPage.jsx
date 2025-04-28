@@ -1,184 +1,171 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FaCreditCard, FaMobileAlt, FaMoneyBillWave } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
 
-const PaymentMethodPage = () => {
-  const lastUpdated = 'April 25, 2025';
-  const [showBackToTop, setShowBackToTop] = useState(false);
+const PaymentMethod = () => {
+  const [activeSection, setActiveSection] = useState(null);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowBackToTop(window.scrollY > 300);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const paymentSections = [
+  const sections = [
     {
-      id: 'introduction',
-      title: '1. Introduction',
-      content:
-        'At GlamsCloset, we offer secure and convenient payment options to make your shopping experience seamless. This page outlines the payment methods we accept, how we ensure security, and related policies. For more details on data protection, please see our <Link to="/privacy" className="text-blue-600 hover:underline" aria-label="View our Privacy Policy">Privacy Policy</Link>.',
-    },
-    {
-      id: 'accepted-methods',
-      title: '2. Accepted Payment Methods',
+      id: 'paystack',
+      title: 'Paystack (Card Payments)',
+      icon: <FaCreditCard className="text-2xl" />,
       content: (
-        <>
-          <p className="text-gray-600">
-            We support the following payment methods to cater to our customers in West Africa and beyond:
+        <div className="space-y-4">
+          <p>
+            Paystack allows secure card payments using Visa, Mastercard, or Verve cards. Follow these steps:
           </p>
-          <ul className="list-disc pl-6 mt-2 text-gray-600 space-y-2">
-            <li>
-              <strong>Card Payments:</strong> We accept major credit and debit cards (Visa, Mastercard) through our secure payment gateway, Paystack. Enter your card details at checkout to complete your purchase.
-            </li>
-            <li>
-              <strong>Mobile Money:</strong> Pay using mobile money services like MTN MoMo. Select the mobile money option at checkout, enter your phone number, and follow the prompts to authorize the payment via your mobile device.
-            </li>
-            <li>
-              <strong>Cash on Delivery (COD):</strong> Available for select locations in Ghana. Choose COD at checkout, and pay in cash when your order is delivered. Please have the exact amount ready, as drivers may not carry change.
-            </li>
-          </ul>
-        </>
+          <ol className="list-decimal list-inside space-y-2">
+            <li>Select Paystack at checkout.</li>
+            <li>Enter your card details in the secure payment form.</li>
+            <li>Confirm the payment with your bank’s OTP or 3D Secure.</li>
+            <li>Receive instant confirmation of your order.</li>
+          </ol>
+          <p className="text-sm italic">
+            Note: Ensure your card is enabled for online transactions.
+          </p>
+        </div>
       ),
     },
     {
-      id: 'payment-security',
-      title: '3. Payment Security',
-      content:
-        'We prioritize your security by using industry-standard encryption and secure payment gateways. Card payments are processed via Paystack, which complies with PCI-DSS standards. Mobile money transactions are secured through trusted providers like MTN MoMo. We do not store your full payment details; sensitive information is handled directly by our payment partners. For more on data protection, see our <Link to="/privacy" className="text-blue-600 hover:underline" aria-label="View our Privacy Policy">Privacy Policy</Link>.',
-    },
-    {
-      id: 'refunds-disputes',
-      title: '4. Refunds and Disputes',
-      content:
-        'If you need to return an item or request a refund, please review our <Link to="/returns" className="text-blue-600 hover:underline" aria-label="View our Returns Policy">Returns Policy</Link>. Refunds are processed to your original payment method within 5-10 business days after we receive and inspect the returned item. For disputes or issues with payments, contact us immediately, and we’ll work with our payment partners to resolve the matter.',
-    },
-    {
-      id: 'contact-us',
-      title: '5. Contact Us',
+      id: 'momo',
+      title: 'MTN MoMo (Mobile Money)',
+      icon: <FaMobileAlt className="text-2xl" />,
       content: (
-        <>
-          If you have questions about our payment methods or need assistance, please contact our customer service team at{' '}
-          <a
-            href="mailto:support@glamscloset.com"
-            className="text-blue-600 hover:underline"
-            aria-label="Email GlamsCloset Support"
-          >
-            support@glamscloset.com
-          </a>{' '}
-          or call{' '}
-          <a
-            href="tel:+233542271847"
-            className="text-blue-600 hover:underline"
-            aria-label="Call GlamsCloset Support"
-          >
-            +233 542 271 847
-          </a>. For additional terms, see our{' '}
-          <Link to="/terms" className="text-blue-600 hover:underline" aria-label="View our Terms of Service">
-            Terms of Service
-          </Link>.
-        </>
+        <div className="space-y-4">
+          <p>
+            Pay conveniently using MTN Mobile Money, popular across West Africa. Here’s how:
+          </p>
+          <ol className="list-decimal list-inside space-y-2">
+            <li>Choose MTN MoMo at checkout.</li>
+            <li>Enter your mobile number registered with MTN MoMo.</li>
+            <li>Approve the payment request sent to your phone.</li>
+            <li>Wait for confirmation (usually within seconds).</li>
+          </ol>
+          <p className="text-sm italic">
+            Ensure you have sufficient balance in your MoMo wallet.
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: 'cash',
+      title: 'Cash on Delivery',
+      icon: <FaMoneyBillWave className="text-2xl" />,
+      content: (
+        <div className="space-y-4">
+          <p>
+            Pay with cash when your order is delivered to your doorstep. Steps:
+          </p>
+          <ol className="list-decimal list-inside space-y-2">
+            <li>Select Cash on Delivery at checkout.</li>
+            <li>Confirm your delivery address and contact details.</li>
+            <li>Pay the exact amount to the delivery agent.</li>
+          </ol>
+          <p className="text-sm italic">
+            Available in select locations. Check eligibility at checkout.
+          </p>
+        </div>
       ),
     },
   ];
 
+  const toggleSection = (id) => {
+    setActiveSection(activeSection === id ? null : id);
+  };
+
   return (
-    <div className="min-h-screen bg-primary">
-      <div className="container mx-auto px-4 py-8 sm:px-8 sm:py-12 max-w-7xl">
-        <motion.h2
-          className="text-4xl font-serif font-bold text-gray-800 mb-4"
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto">
+        <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
+          className="text-4xl font-bold text-center mb-8"
         >
           Payment Methods
-        </motion.h2>
-        <motion.p
-          className="text-gray-600 mb-8 leading-relaxed"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          Last Updated: {lastUpdated}
-        </motion.p>
+        </motion.h1>
 
         {/* Table of Contents */}
         <motion.div
-          className="mb-12 bg-white p-6 rounded-lg shadow-md"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 mb-8"
         >
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">Table of Contents</h3>
+          <h2 className="text-2xl font-semibold mb-4">Table of Contents</h2>
           <ul className="space-y-2">
-            {paymentSections.map((section) => (
+            {sections.map((section) => (
               <li key={section.id}>
-                <motion.a
-                  href={`#${section.id}`}
-                  className="text-blue-600 hover:text-blue-800 hover:underline"
-                  whileHover={{ x: 5 }}
-                  transition={{ type: 'spring', stiffness: 300 }}
+                <button
+                  onClick={() => {
+                    document.getElementById(section.id).scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="text-blue-600 dark:text-blue-400 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
                 >
                   {section.title}
-                </motion.a>
+                </button>
               </li>
             ))}
           </ul>
         </motion.div>
 
         {/* Payment Sections */}
-        {paymentSections.map((section, index) => (
-          <motion.article
-            key={section.id}
-            id={section.id}
-            className="bg-white p-6 rounded-lg shadow-md space-y-4 mb-8"
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: index * 0.1 }}
-          >
-            <h3 className="text-2xl font-semibold text-gray-800">{section.title}</h3>
-            <div className="text-gray-600 leading-relaxed">{section.content}</div>
-          </motion.article>
-        ))}
-
-        {/* Back to Top Button */}
-        <AnimatePresence>
-          {showBackToTop && (
-            <motion.button
-              onClick={scrollToTop}
-              className="fixed bottom-8 right-8 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700"
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0 }}
-              transition={{ duration: 0.3 }}
-              aria-label="Scroll to top"
+        <div className="space-y-8">
+          {sections.map((section) => (
+            <motion.div
+              key={section.id}
+              id={section.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden"
             >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
+              <button
+                onClick={() => toggleSection(section.id)}
+                className="w-full flex items-center space-x-4 p-6 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                aria-expanded={activeSection === section.id}
+                aria-controls={`content-${section.id}`}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M5 10l7-7m0 0l7 7m-7-7v18"
-                />
-              </svg>
-            </motion.button>
-          )}
-        </AnimatePresence>
+                {section.icon}
+                <h2 className="text-xl font-semibold">{section.title}</h2>
+              </button>
+              <AnimatePresence>
+                {activeSection === section.id && (
+                  <motion.div
+                    id={`content-${section.id}`}
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="p-6 bg-gray-50 dark:bg-gray-700"
+                  >
+                    {section.content}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Back to Help Center */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
+          className="mt-8 text-center"
+        >
+          <Link
+            to="/help-center"
+            className="inline-block bg-blue-600 dark:bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            Back to Help Center
+          </Link>
+        </motion.div>
       </div>
     </div>
   );
 };
 
-export default PaymentMethodPage;
+export default PaymentMethod;
