@@ -1,26 +1,22 @@
 import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema(
-  {
-    firstName: { type: String, required: true },
-    lastName: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    phone: { type: String },
-    address: {
-      street: { type: String, default: "" },
-      city: { type: String, default: "" },
-      region: { type: String, default: "" },
-      digitalAddress: { type: String, default: "" },
-      country: { type: String, default: "Ghana" },
-    },
-    cartData: { type: Object, default: {} },
-    wishlistData: { type: [String], default: [] },
-    isAdmin: { type: Boolean, default: false },
+const userSchema = new mongoose.Schema({
+  firstName: { type: String, required: true },
+  lastName: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  isAdmin: { type: Boolean, default: false },
+  phone: { type: String },
+  address: {
+    street: { type: String },
+    city: { type: String },
+    state: { type: String },
+    digitalAddress: { type: String },
+    country: { type: String, default: "Ghana" },
   },
-  { minimize: false }
-);
+  cartData: { type: Object, default: {} },
+  wishlistData: { type: Array, default: [] },
+});
 
-const userModel = mongoose.models.user || mongoose.model("user", userSchema);
-
+const userModel = mongoose.models.User || mongoose.model("User", userSchema);
 export default userModel;

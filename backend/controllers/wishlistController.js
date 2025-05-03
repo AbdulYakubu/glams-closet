@@ -1,70 +1,99 @@
-// wishlistController.js
+import userModel from "../models/userModel.js";
 
-import userModel from '../models/userModel.js';
-
-// Add to Wishlist
-export const addToWishlist = async (req, res) => {
+const getWishlist = async (req, res) => {
   try {
-    const { userId, itemId } = req.body;
+    console.log("Starting getWishlist, req.userId:", req.userId);
+    if (!req.userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized: No user ID provided" });
+    }
 
-    // Find user by userId
-    const userData = await userModel.findById(userId);
-    if (!userData) {
+    const user = await userModel.findById(req.userId).select("wishlistData");
+    console.log("User lookup result for _id:", req.userId, "User:", user ? user : "Not found");
+    if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Add item to wishlist using MongoDB's $addToSet to avoid duplicates
-    await userModel.findByIdAndUpdate(userId, {
-      $addToSet: { wishlistData: itemId },
+    console.log("Wishlist fetched for user:", req.userId, "wishlistData:", user.wishlistData);
+    res.json({
+      success: true,
+      wishlistData: user.wishlistData || [],
     });
-
-    return res.json({ success: true, message: "Added to Wishlist" });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ success: false, message: error.message });
+    console.error("Get wishlist error:", error.message);
+    res.status(500).json({ success: false, message: "Error fetching wishlist" });
   }
 };
 
-// Remove from Wishlist
-export const removeFromWishlist = async (req, res) => {
+const addToWishlist = async (req, res) => {
   try {
-    const { userId, itemId } = req.body;
+    console.log("Starting addToWishlist, req.userId:", req.userId, "Body:", req.body);
+    if (!req.userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized: No user ID provided" });
+    }
 
-    // Find user by userId
-    const userData = await userModel.findById(userId);
-    if (!userData) {
+    const { itemId } = req.body;
+    if (!itemId) {
+      return res.status(400).json({ success: false, message: "Item ID is required" });
+    }
+
+    const user = await userModel.findById(req.userId);
+    console.log("User lookup result for _id:", req.userId, "User:", user ? user : "Not found");
+    if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Remove item from wishlist using MongoDB's $pull operator
-    await userModel.findByIdAndUpdate(userId, {
-      $pull: { wishlistData: itemId },
+    const updatedUser = await userModel.findByIdAndUpdate(
+      req.userId,
+      { $addToSet: { wishlistData: itemId } },
+      { new: true }
+    ).select("wishlistData");
+
+    console.log("Wishlist updated for user:", req.userId, "New wishlistData:", updatedUser.wishlistData);
+    res.json({
+      success: true,
+      message: "Added to wishlist",
+      wishlistData: updatedUser.wishlistData || [],
     });
-
-    return res.json({ success: true, message: "Removed from Wishlist" });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ success: false, message: error.message });
+    console.error("Add to wishlist error:", error.message);
+    res.status(500).json({ success: false, message: "Error adding to wishlist" });
   }
 };
 
-// Get Wishlist
-export const getWishlist = async (req, res) => {
+const removeFromWishlist = async (req, res) => {
   try {
-    const { userId } = req.body;
+    console.log("Starting removeFromWishlist, req.userId:", req.userId, "Body:", req.body);
+    if (!req.userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized: No user ID provided" });
+    }
 
-    // Find user by userId
-    const userData = await userModel.findById(userId);
-    if (!userData) {
+    const { itemId } = req.body;
+    if (!itemId) {
+      return res.status(400).json({ success: false, message: "Item ID is required" });
+    }
+
+    const user = await userModel.findById(req.userId);
+    console.log("User lookup result for _id:", req.userId, "User:", user ? user : "Not found");
+    if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Retrieve wishlist data
-    const wishlist = userData.wishlistData || [];
+    const updatedUser = await userModel.findByIdAndUpdate(
+      req.userId,
+      { $pull: { wishlistData: itemId } },
+      { new: true }
+    ).select("wishlistData");
 
-    return res.json({ success: true, wishlist });
+    console.log("Wishlist updated for user:", req.userId, "New wishlistData:", updatedUser.wishlistData);
+    res.json({
+      success: true,
+      message: "Removed from wishlist",
+      wishlistData: updatedUser.wishlistData || [],
+    });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ success: false, message: error.message });
+    console.error("Remove from wishlist error:", error.message);
+    res.status(500).json({ success: false, message: "Error removing from wishlist" });
   }
 };
+
+export { getWishlist, addToWishlist, removeFromWishlist };

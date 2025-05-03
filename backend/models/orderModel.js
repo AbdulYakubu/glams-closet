@@ -9,7 +9,7 @@ const orderSchema = new mongoose.Schema({
   items: [
     {
       productId: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId, // Changed from String to ObjectId
         ref: "Product",
         required: true,
       },
@@ -20,7 +20,6 @@ const orderSchema = new mongoose.Schema({
       quantity: {
         type: Number,
         required: true,
-        min: 1,
       },
       price: {
         type: Number,
@@ -28,17 +27,16 @@ const orderSchema = new mongoose.Schema({
       },
       size: {
         type: String,
-        required: false,
+        default: "",
       },
       image: {
         type: [String],
-        required: false,
         default: [],
       },
     },
   ],
   amount: {
-    type: Number, // Stored in cedis
+    type: Number,
     required: true,
   },
   address: {
@@ -52,7 +50,7 @@ const orderSchema = new mongoose.Schema({
     },
     street: {
       type: String,
-      required: false,
+      default: "",
     },
     city: {
       type: String,
@@ -60,7 +58,7 @@ const orderSchema = new mongoose.Schema({
     },
     state: {
       type: String,
-      required: false,
+      default: "",
     },
     country: {
       type: String,
@@ -68,17 +66,12 @@ const orderSchema = new mongoose.Schema({
     },
     digitalAddress: {
       type: String,
-      required: false,
+      default: "",
     },
     phone: {
       type: String,
       required: true,
     },
-  },
-  status: {
-    type: String,
-    enum: ["Packing", "Shipped", "Out for Delivery", "Delivered"],
-    default: "Packing",
   },
   paymentMethod: {
     type: String,
@@ -91,12 +84,17 @@ const orderSchema = new mongoose.Schema({
   },
   paymentStatus: {
     type: String,
-    enum: ["pending", "completed"],
     default: "pending",
+    enum: ["pending", "completed", "failed"],
   },
-  paymentReference: {
+  reference: {
     type: String,
-    required: false,
+    default: "",
+  },
+  status: {
+    type: String,
+    default: "Packing",
+    enum: ["Packing", "Shipped", "Delivered", "Cancelled"],
   },
   date: {
     type: Date,
@@ -104,6 +102,6 @@ const orderSchema = new mongoose.Schema({
   },
 });
 
-const orderModel = mongoose.models.order || mongoose.model("order", orderSchema);
+const orderModel = mongoose.models.Order || mongoose.model("Order", orderSchema);
 
 export default orderModel;

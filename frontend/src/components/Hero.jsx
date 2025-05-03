@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaArrowRight } from 'react-icons/fa';
-import slide1 from '../assets/assets/bg-hero.jpeg';
+import slide1 from '../assets/assets/elegant.jpg';
 import slide2 from '../assets/assets/abaaya.webp';
 import slide3 from '../assets/assets/hero_1.jpg';
 

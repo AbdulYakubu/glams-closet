@@ -5,35 +5,80 @@ import axios from "axios";
 
 const placeOrder = async (req, res) => {
   console.log("Starting placeOrder (COD)");
-  const { items, amount, address } = req.body;
-  const userId = req.body.userId;
+  const { items, amount, address, email } = req.body;
+  const userId = req.userId;
 
-  console.log("COD Request Body:", JSON.stringify(req.body, null, 2));
-  console.log("User ID from token:", userId);
+  console.log("COD Request:", { userId, body: JSON.stringify(req.body, null, 2) });
 
   try {
-    if (!items || !items.length || !amount || !address || !userId) {
-      console.log("Missing fields:", { items, amount, address, userId });
-      return res.status(400).json({ success: false, message: "Missing required fields" });
+    if (!userId) {
+      console.error("No userId provided");
+      return res.status(401).json({ success: false, message: "User not authenticated" });
     }
 
-    items.forEach((item, index) => {
-      if (!item._id) {
-        console.error(`Item at index ${index} missing _id:`, JSON.stringify(item, null, 2));
-        throw new Error(`Item at index ${index} missing product ID`);
-      }
-      if (!item.name || !item.quantity || !item.price) {
-        throw new Error(`Invalid item data at index ${index}: ${JSON.stringify(item)}`);
-      }
-    });
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      console.error("Invalid userId format:", userId);
+      return res.status(400).json({ success: false, message: "Invalid user ID format" });
+    }
 
-    if (!address.firstName || !address.lastName || !address.city || !address.country || !address.phone) {
-      console.log("Invalid address:", address);
-      return res.status(400).json({ success: false, message: "Incomplete address information" });
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      console.error("Invalid items:", items);
+      return res.status(400).json({ success: false, message: "Items are required and must be a non-empty array" });
+    }
+
+    if (!amount || typeof amount !== "number" || amount <= 0) {
+      console.error("Invalid amount:", amount);
+      return res.status(400).json({ success: false, message: "Valid amount is required" });
+    }
+
+    if (!address || typeof address !== "object") {
+      console.error("Invalid address:", address);
+      return res.status(400).json({ success: false, message: "Address is required" });
+    }
+
+    // Validate items
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (!item._id || !item.name || !item.quantity || !item.price) {
+        console.error(`Invalid item at index ${i}:`, item);
+        return res.status(400).json({
+          success: false,
+          message: `Item at index ${i} missing required fields (_id, name, quantity, price)`,
+        });
+      }
+      if (typeof item.quantity !== "number" || item.quantity <= 0) {
+        console.error(`Invalid quantity for item at index ${i}:`, item.quantity);
+        return res.status(400).json({
+          success: false,
+          message: `Item at index ${i} has invalid quantity`,
+        });
+      }
+      if (typeof item.price !== "number" || item.price <= 0) {
+        console.error(`Invalid price for item at index ${i}:`, item.price);
+        return res.status(400).json({
+          success: false,
+          message: `Item at index ${i} has invalid price`,
+        });
+      }
+    }
+
+    // Validate address
+    const requiredAddressFields = ["firstName", "lastName", "city", "country", "phone"];
+    for (const field of requiredAddressFields) {
+      if (!address[field]) {
+        console.error("Missing address field:", field);
+        return res.status(400).json({ success: false, message: `Address ${field} is required` });
+      }
+    }
+
+    const user = await userModel.findById(userId);
+    if (!user) {
+      console.error("User not found:", userId);
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
     const orderData = {
-      userId,
+      userId: new mongoose.Types.ObjectId(userId),
       items: items.map((item) => ({
         productId: item._id,
         name: item.name,
@@ -56,24 +101,37 @@ const placeOrder = async (req, res) => {
       paymentMethod: "COD",
       payment: false,
       paymentStatus: "pending",
-      date: new Date(),
       status: "Packing",
+      date: new Date(),
     };
 
-    console.log("Saving COD order to MongoDB");
+    console.log("Attempting to save COD order:", JSON.stringify(orderData, null, 2));
     const newOrder = new orderModel(orderData);
     const savedOrder = await newOrder.save();
-    console.log("COD Order saved:", savedOrder._id);
+    console.log("COD Order saved successfully:", savedOrder._id);
 
-    console.log("Clearing user cart");
-    await userModel.findByIdAndUpdate(userId, { cartData: {} });
+    console.log("Clearing user cart for user:", userId);
+    const updatedUser = await userModel.findByIdAndUpdate(userId, { cartData: {} }, { new: true });
+    if (!updatedUser) {
+      console.warn("Failed to clear cart for user:", userId);
+    } else {
+      console.log("User cart cleared successfully");
+    }
+
+    // Verify order in database
+    const verifiedOrder = await orderModel.findById(savedOrder._id);
+    if (!verifiedOrder) {
+      console.error("Order not found after save:", savedOrder._id);
+      return res.status(500).json({ success: false, message: "Order save verification failed" });
+    }
+    console.log("Order verified in database:", verifiedOrder._id);
 
     res.json({ success: true, message: "Order Placed", orderId: savedOrder._id });
   } catch (error) {
-    console.error("COD Error Details:", {
+    console.error("COD Error:", {
       message: error.message,
       stack: error.stack,
-      requestBody: req.body,
+      body: JSON.stringify(req.body, null, 2),
     });
     res.status(500).json({ success: false, message: error.message || "Failed to place COD order" });
   }
@@ -82,29 +140,67 @@ const placeOrder = async (req, res) => {
 const placeOrderPayStack = async (req, res) => {
   console.log("Starting placeOrderPayStack");
   const { email, amount, items, address } = req.body;
-  const userId = req.body.userId;
+  const userId = req.userId;
 
-  console.log("Paystack Request Body:", JSON.stringify(req.body, null, 2));
-  console.log("User ID from token:", userId);
+  console.log("Paystack Request:", { userId, body: JSON.stringify(req.body, null, 2) });
 
   try {
-    if (!email || !amount || !items || !items.length || !address || !userId) {
-      console.log("Missing fields:", { email, amount, items, address, userId });
+    if (!userId) {
+      console.error("No userId provided");
+      return res.status(401).json({ success: false, message: "User not authenticated" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      console.error("Invalid userId format:", userId);
+      return res.status(400).json({ success: false, message: "Invalid user ID format" });
+    }
+
+    if (!email || !amount || !items || !items.length || !address) {
+      console.error("Missing fields:", { email, amount, items, address });
       return res.status(400).json({ success: false, message: "Missing required fields" });
     }
 
-    items.forEach((item, index) => {
-      if (!item._id) {
-        console.error(`Item at index ${index} missing _id:`, JSON.stringify(item, null, 2));
-        throw new Error(`Item at index ${index} missing product ID`);
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (!item._id || !item.name || !item.quantity || !item.price) {
+        console.error(`Invalid item at index ${i}:`, item);
+        return res.status(400).json({
+          success: false,
+          message: `Item at index ${i} missing required fields (_id, name, quantity, price)`,
+        });
       }
-      if (!item.name || !item.quantity || !item.price) {
-        throw new Error(`Invalid item data at index ${index}: ${JSON.stringify(item)}`);
+      if (typeof item.quantity !== "number" || item.quantity <= 0) {
+        console.error(`Invalid quantity for item at index ${i}:`, item.quantity);
+        return res.status(400).json({
+          success: false,
+          message: `Item at index ${i} has invalid quantity`,
+        });
       }
-    });
+      if (typeof item.price !== "number" || item.price <= 0) {
+        console.error(`Invalid price for item at index ${i}:`, item.price);
+        return res.status(400).json({
+          success: false,
+          message: `Item at index ${i} has invalid price`,
+        });
+      }
+    }
+
+    const requiredAddressFields = ["firstName", "lastName", "city", "country", "phone"];
+    for (const field of requiredAddressFields) {
+      if (!address[field]) {
+        console.error("Missing address field:", field);
+        return res.status(400).json({ success: false, message: `Address ${field} is required` });
+      }
+    }
+
+    const user = await userModel.findById(userId);
+    if (!user) {
+      console.error("User not found:", userId);
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
 
     const orderData = {
-      userId,
+      userId: new mongoose.Types.ObjectId(userId),
       items: items.map((item) => ({
         productId: item._id,
         name: item.name,
@@ -115,36 +211,42 @@ const placeOrderPayStack = async (req, res) => {
       })),
       amount,
       address: {
-        firstName: address.firstName || "",
-        lastName: address.lastName || "",
+        firstName: address.firstName,
+        lastName: address.lastName,
         street: address.street || "",
-        city: address.city || "",
+        city: address.city,
         state: address.region || "",
-        country: address.country || "",
+        country: address.country,
         digitalAddress: address.digitalAddress || "",
-        phone: address.phone || "",
+        phone: address.phone,
       },
       paymentMethod: "Paystack",
       payment: false,
       paymentStatus: "pending",
-      date: new Date(),
       status: "Packing",
+      date: new Date(),
     };
 
-    console.log("Saving order to MongoDB");
+    console.log("Attempting to save Paystack order:", JSON.stringify(orderData, null, 2));
     const newOrder = new orderModel(orderData);
     const savedOrder = await newOrder.save();
-    console.log("Order saved:", savedOrder._id);
+    console.log("Paystack Order saved successfully:", savedOrder._id);
+
+    // Verify order in database
+    const verifiedOrder = await orderModel.findById(savedOrder._id);
+    if (!verifiedOrder) {
+      console.error("Order not found after save:", savedOrder._id);
+      return res.status(500).json({ success: false, message: "Order save verification failed" });
+    }
+    console.log("Order verified in database:", verifiedOrder._id);
 
     const amountInKobo = Math.round(amount * 100);
     if (isNaN(amountInKobo) || amountInKobo < 100) {
-      console.log("Invalid amount:", amountInKobo);
+      console.error("Invalid amount:", amountInKobo);
       return res.status(400).json({ success: false, message: "Invalid amount (must be >= 100 kobo)" });
     }
 
     console.log("Initializing Paystack transaction");
-    console.log("Paystack Secret Key:", process.env.PAYSTACK_SECRET_KEY ? "Set" : "Missing");
-
     const response = await axios.post(
       "https://api.paystack.co/transaction/initialize",
       {
@@ -166,11 +268,19 @@ const placeOrderPayStack = async (req, res) => {
       }
     );
 
-    console.log("Paystack API Response:", JSON.stringify(response.data, null, 2));
+    console.log("Paystack Response:", response.data);
 
     if (!response.data?.status || !response.data?.data?.authorization_url) {
-      console.log("Invalid Paystack response:", response.data);
-      throw new Error("Invalid response from Paystack");
+      console.error("Invalid Paystack response:", response.data);
+      return res.status(500).json({ success: false, message: "Invalid response from Paystack" });
+    }
+
+    console.log("Clearing user cart for user:", userId);
+    const updatedUser = await userModel.findByIdAndUpdate(userId, { cartData: {} }, { new: true });
+    if (!updatedUser) {
+      console.warn("Failed to clear cart for user:", userId);
+    } else {
+      console.log("User cart cleared successfully");
     }
 
     res.json({
@@ -180,58 +290,93 @@ const placeOrderPayStack = async (req, res) => {
       orderId: savedOrder._id,
     });
   } catch (error) {
-    console.error("Paystack Error Details:", {
+    console.error("Paystack Error:", {
       message: error.message,
       stack: error.stack,
       response: error.response?.data,
       status: error.response?.status,
+      body: JSON.stringify(req.body, null, 2),
     });
     res.status(error.response?.status || 500).json({
       success: false,
-      message: error.response?.data?.message || error.message || "Transaction initialization failed",
+      message: error.response?.data?.message || "Transaction initialization failed",
     });
   }
 };
 
 const paystackCallback = async (req, res) => {
+  console.log("Starting paystackCallback");
   const { reference } = req.query;
 
   try {
-    const response = await axios.get(
-      `https://api.paystack.co/transaction/verify/${reference}`,
+    if (!reference) {
+      console.error("No reference provided");
+      return res.status(400).json({ success: false, message: "Reference is required" });
+    }
+
+    console.log("Verifying Paystack transaction:", reference);
+    const response = await axios.get(`https://api.paystack.co/transaction/verify/${reference}`, {
+      headers: {
+        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        "Content-Type": "application/json",
+      },
+      timeout: 15000,
+    });
+
+    console.log("Paystack Verification Response:", response.data);
+
+    if (!response.data.status || response.data.data.status !== "success") {
+      console.error("Payment not successful:", response.data);
+      return res.status(400).json({ success: false, message: "Payment not successful" });
+    }
+
+    const orderId = response.data.data.metadata.order_id;
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      console.error("Invalid orderId:", orderId);
+      return res.status(400).json({ success: false, message: "Invalid order ID" });
+    }
+
+    console.log("Updating order:", orderId);
+    const order = await orderModel.findByIdAndUpdate(
+      orderId,
       {
-        headers: {
-          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-        },
-      }
+        payment: true,
+        paymentStatus: "completed",
+        reference,
+      },
+      { new: true }
     );
 
-    const paymentData = response.data.data;
-
-    if (paymentData.status === "success") {
-      const orderId = paymentData.metadata.order_id || reference.replace("order_", "");
-      await orderModel.findByIdAndUpdate(orderId, {
-        payment: true,
-        paymentReference: paymentData.reference,
-        paymentStatus: "completed",
-        status: "Packing",
-      });
-      await userModel.findByIdAndUpdate(paymentData.metadata.user_id, { cartData: {} });
-      res.redirect(`${process.env.FRONTEND_URL}/orders?payment=success`);
-    } else {
-      res.redirect(`${process.env.FRONTEND_URL}/place-order?error=payment_failed`);
+    if (!order) {
+      console.error("Order not found:", orderId);
+      return res.status(404).json({ success: false, message: "Order not found" });
     }
+
+    console.log("Clearing user cart for user:", order.userId);
+    const updatedUser = await userModel.findByIdAndUpdate(order.userId, { cartData: {} }, { new: true });
+    if (!updatedUser) {
+      console.warn("Failed to clear cart for user:", order.userId);
+    } else {
+      console.log("User cart cleared successfully");
+    }
+
+    res.redirect(`${process.env.FRONTEND_URL}/orders`);
   } catch (error) {
-    console.error("Paystack Callback Error:", error.response?.data || error.message);
-    res.redirect(`${process.env.FRONTEND_URL}/place-order?error=verification_failed`);
+    console.error("Callback Error:", {
+      message: error.message,
+      stack: error.stack,
+      response: error.response?.data,
+    });
+    res.status(500).json({ success: false, message: "Callback processing failed" });
   }
 };
 
 const verifyPayStack = async (req, res) => {
   const { reference } = req.params;
-  const userId = req.body.userId;
+  const userId = req.userId;
 
   try {
+    console.log("Verifying Paystack payment, reference:", reference, "userId:", userId);
     const response = await axios.get(
       `https://api.paystack.co/transaction/verify/${reference}`,
       {
@@ -242,11 +387,13 @@ const verifyPayStack = async (req, res) => {
     );
 
     const paymentData = response.data.data;
+    console.log("Paystack verification response:", JSON.stringify(paymentData, null, 2));
 
     if (paymentData.status === "success") {
       const orderId = paymentData.metadata.order_id || reference.replace("order_", "");
       const order = await orderModel.findById(orderId);
       if (!order || order.userId.toString() !== userId) {
+        console.error("Unauthorized access or order not found:", { orderId, userId });
         return res.status(403).json({ success: false, message: "Unauthorized access to order" });
       }
       await orderModel.findByIdAndUpdate(orderId, {
@@ -256,8 +403,10 @@ const verifyPayStack = async (req, res) => {
         status: "Packing",
       });
       await userModel.findByIdAndUpdate(userId, { cartData: {} });
+      console.log("Payment verified, order updated:", orderId);
       res.json({ success: true, message: "Payment verified successfully", orderId });
     } else {
+      console.log("Payment not successful, status:", paymentData.status);
       res.json({ success: false, message: "Payment not successful", status: paymentData.status });
     }
   } catch (error) {
@@ -272,94 +421,145 @@ const verifyPayStack = async (req, res) => {
 
 const allOrders = async (req, res) => {
   try {
-    const orders = await orderModel.find({});
+    console.log("Fetching all orders");
+    const orders = await orderModel.find({}).sort({ date: -1 });
+    console.log("All orders fetched:", orders.length);
     res.json({ success: true, orders });
   } catch (error) {
-    console.error("All Orders Error:", error);
-    res.json({ success: false, message: error.message });
+    console.error("All Orders Error:", error.message);
+    res.status(500).json({ success: false, message: "Error fetching orders" });
   }
 };
 
 const userOrders = async (req, res) => {
   console.log("Starting userOrders");
+  const userId = req.userId;
+
   try {
-    const userId = req.body.userId;
-    console.log("Fetching orders for userId:", userId);
-    const orders = await orderModel.find({ userId });
-    console.log("Orders found:", orders.length);
+    if (!userId) {
+      console.error("No userId provided");
+      return res.status(401).json({ success: false, message: "User not authenticated" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      console.error("Invalid userId format:", userId);
+      return res.status(400).json({ success: false, message: "Invalid user ID format" });
+    }
+
+    console.log("Fetching orders for user:", userId);
+    const orders = await orderModel.find({ userId: new mongoose.Types.ObjectId(userId) }).sort({ date: -1 });
+
+    console.log(`Orders found: ${orders.length}`, JSON.stringify(orders, null, 2));
     res.json({ success: true, orders });
   } catch (error) {
-    console.error("User Orders Error:", error);
-    res.status(500).json({ success: false, message: error.message });
+    console.error("userOrders Error:", {
+      message: error.message,
+      stack: error.stack,
+    });
+    res.status(500).json({ success: false, message: "Failed to fetch orders" });
   }
 };
 
 const updateStatus = async (req, res) => {
   try {
     const { orderId, status } = req.body;
+    console.log("Updating status for order:", orderId, "to:", status);
     if (!["Packing", "Shipped", "Out for Delivery", "Delivered"].includes(status)) {
+      console.error("Invalid status:", status);
       return res.status(400).json({ success: false, message: "Invalid status" });
     }
-    await orderModel.findByIdAndUpdate(orderId, { status });
+    const order = await orderModel.findByIdAndUpdate(orderId, { status }, { new: true });
+    console.log("Status updated:", order);
     res.json({ success: true, message: "Status Updated" });
   } catch (error) {
-    console.error("Update Status Error:", error);
-    res.json({ success: false, message: error.message });
+    console.error("Update Status Error:", error.message);
+    res.status(500).json({ success: false, message: "Error updating status" });
   }
 };
 
 const trackOrder = async (req, res) => {
+  const { orderId } = req.params;
+  const userId = req.userId;
+
+  console.log("Tracking order:", { orderId, userId });
+
   try {
-    const { orderId } = req.params;
-    const userId = req.body.userId;
-
-    console.log("Tracking order:", { orderId, userId });
-
     if (!orderId || !userId) {
+      console.error("Missing orderId or userId:", { orderId, userId });
       return res.status(400).json({ success: false, message: "Order ID and user ID are required" });
     }
 
     if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      console.error("Invalid orderId format:", orderId);
       return res.status(400).json({ success: false, message: "Invalid order ID format" });
     }
 
-    const order = await orderModel
-      .findById(orderId)
-      .populate("items.productId", "name image");
+    const order = await orderModel.findById(orderId);
     if (!order) {
+      console.error("Order not found:", orderId);
       return res.status(404).json({ success: false, message: "Order not found" });
     }
+
     if (order.userId.toString() !== userId) {
+      console.error("Unauthorized access:", { orderId, userId, orderUserId: order.userId });
       return res.status(403).json({ success: false, message: "Unauthorized access to this order" });
     }
 
-    res.json({
-      success: true,
-      order: {
-        orderId: order._id,
-        items: order.items.map((item) => ({
-          productId: item.productId._id,
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-          size: item.size || "",
-          image: item.image.length > 0 ? item.image : item.productId.image || [],
-        })),
-        amount: order.amount,
-        address: order.address,
-        paymentMethod: order.paymentMethod,
-        payment: order.payment,
-        paymentStatus: order.paymentStatus,
-        date: order.date,
-        status: order.status,
-      },
-    });
+    const orderDetails = {
+      orderId: order._id,
+      date: order.date,
+      amount: order.amount,
+      payment: order.payment,
+      paymentMethod: order.paymentMethod,
+      status: order.status,
+      products: order.items || [], // Use order.items instead of order.products
+      address: order.address,
+      items: [], // Populated with enriched item data
+    };
+
+    // Check if order.items is an array and iterable
+    if (Array.isArray(order.items)) {
+      for (const item of order.items) {
+        try {
+          const product = await productModel.findById(item.productId);
+          orderDetails.items.push({
+            productId: item.productId,
+            name: product ? product.name : item.name || "Unknown Item", // Fallback to item.name
+            image: product ? product.image || [] : item.image || [],
+            price: item.price || (product ? product.price : 0),
+            quantity: item.quantity || 1,
+            size: item.size || "",
+          });
+        } catch (error) {
+          console.warn(`Failed to fetch product ${item.productId}:`, error.message);
+          // Include item with stored data as fallback
+          orderDetails.items.push({
+            productId: item.productId,
+            name: item.name || "Unknown Item",
+            image: item.image || [],
+            price: item.price || 0,
+            quantity: item.quantity || 1,
+            size: item.size || "",
+          });
+        }
+      }
+    } else {
+      console.warn("order.items is not an array or is undefined:", order.items);
+      orderDetails.products = []; // Ensure products is an empty array if items is invalid
+    }
+
+    console.log("Order details retrieved:", orderDetails);
+    res.json({ success: true, order: orderDetails });
   } catch (error) {
-    console.error("Track Order Error:", error);
-    res.status(500).json({ success: false, message: error.message || "Failed to track order" });
+    console.error("Track order error:", {
+      message: error.message,
+      stack: error.stack,
+      orderId,
+      userId,
+    });
+    res.status(500).json({ success: false, message: "Error tracking order" });
   }
 };
-
 export {
   placeOrder,
   placeOrderPayStack,

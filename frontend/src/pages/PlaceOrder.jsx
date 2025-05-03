@@ -34,20 +34,22 @@ const PlaceOrder = () => {
 
   const [formData, setFormData] = useState(() => {
     const savedData = localStorage.getItem("checkoutFormData");
-    return savedData ? JSON.parse(savedData) : {
-      firstName: "",
-      lastName: "",
-      email: "",
-      street: "",
-      city: "",
-      region: "",
-      digitalAddress: "",
-      country: "Ghana",
-      phone: "",
-    };
+    return savedData
+      ? JSON.parse(savedData)
+      : {
+          firstName: "Zinabu",
+          lastName: "Abdul Rhman",
+          email: "zinab@gmail.com",
+          street: "",
+          city: "",
+          region: "",
+          digitalAddress: "",
+          country: "Ghana",
+          phone: "0542271847",
+        };
   });
 
-  const [paymentMethod, setPaymentMethod] = useState("paystack");
+  const [paymentMethod, setPaymentMethod] = useState("cod");
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [isFormValid, setIsFormValid] = useState(false);
   const [errors, setErrors] = useState({});
@@ -56,7 +58,11 @@ const PlaceOrder = () => {
   // Debug re-renders
   useEffect(() => {
     console.log("PlaceOrder re-rendered");
-  });
+    console.log("Token:", token ? "Present" : "Missing");
+    console.log("CartItems:", JSON.stringify(cartItems, null, 2));
+    console.log("Products:", JSON.stringify(products, null, 2));
+    console.log("FormData:", formData);
+  }, [cartItems, products, token, formData]);
 
   // Save form data to localStorage
   useEffect(() => {
@@ -71,10 +77,10 @@ const PlaceOrder = () => {
 
     if (name === "firstName" && !value.trim()) errors.firstName = "First name is required";
     if (name === "lastName" && !value.trim()) errors.lastName = "Last name is required";
-    if (name === "email" && !emailRegex.test(value)) errors.email = "Valid email is required";
-    if (name === "phone" && !phoneRegex.test(value)) errors.phone = "Valid Ghanaian phone number required (e.g., 0241234567)";
+    if (name === "email" && value && !emailRegex.test(value)) errors.email = "Valid email is required";
+    if (name === "phone" && !phoneRegex.test(value))
+      errors.phone = "Valid Ghanaian phone number required (e.g., 0542271847)";
     if (name === "city" && !value.trim()) errors.city = "City is required";
-    if (name === "region" && !value.trim()) errors.region = "Region is required";
     if (name === "country" && !value.trim()) errors.country = "Country is required";
 
     return errors;
@@ -89,15 +95,16 @@ const PlaceOrder = () => {
 
     if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
     if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
-    if (!emailRegex.test(formData.email)) newErrors.email = "Valid email is required";
-    if (!phoneRegex.test(formData.phone)) newErrors.phone = "Valid Ghanaian phone number required (e.g., 0241234567)";
+    if (formData.email && !emailRegex.test(formData.email)) newErrors.email = "Valid email is required";
+    if (!phoneRegex.test(formData.phone))
+      newErrors.phone = "Valid Ghanaian phone number required (e.g., 0542271847)";
     if (!formData.city.trim()) newErrors.city = "City is required";
-    if (!formData.region.trim()) newErrors.region = "Region is required";
     if (!formData.country.trim()) newErrors.country = "Country is required";
 
     setErrors(newErrors);
     const valid = Object.keys(newErrors).length === 0;
     setIsFormValid(valid);
+    console.log("Form validation:", { isValid: valid, errors: newErrors });
     return valid;
   }, [formData]);
 
@@ -123,6 +130,7 @@ const PlaceOrder = () => {
   const prepareOrderItems = useMemo(() => {
     return () => {
       if (!cartItems || !products?.length) {
+        console.error("Cart or product data missing", { cartItems, products });
         toast.error("Cart or product data is missing");
         return [];
       }
@@ -141,8 +149,8 @@ const PlaceOrder = () => {
             orderItems.push({
               _id: itemInfo._id,
               name: itemInfo.name,
-              quantity: cartItems[productId][size],
-              price: itemInfo.price,
+              quantity: Number(cartItems[productId][size]),
+              price: Number(itemInfo.price),
               size,
               image: Array.isArray(itemInfo.image) ? itemInfo.image[0] : itemInfo.image || "",
             });
@@ -150,7 +158,10 @@ const PlaceOrder = () => {
         }
       }
       if (!orderItems.length) {
+        console.error("No valid items in cart");
         toast.error("No valid items in cart");
+      } else {
+        console.log("Prepared order items:", JSON.stringify(orderItems, null, 2));
       }
       return orderItems;
     };
@@ -159,14 +170,16 @@ const PlaceOrder = () => {
   const placeOrder = useCallback(
     async (method) => {
       const items = prepareOrderItems();
-      const amount = getCartAmount() + delivery_charges;
+      const amount = Number(getCartAmount()) + Number(delivery_charges);
 
-      if (!items.length || !amount || isNaN(amount)) {
+      if (!items.length || !amount || isNaN(amount) || amount <= 0) {
+        console.error("Invalid order data", { items, amount, cartItems, products });
         toast.error("Cart is empty or amount is invalid");
         throw new Error("Invalid cart data");
       }
 
       if (!token) {
+        console.error("No token provided");
         toast.error("Please login to place an order");
         navigate("/login");
         setPaymentLoading(false);
@@ -174,11 +187,17 @@ const PlaceOrder = () => {
       }
 
       const payload = {
-        email: formData.email,
+        email: formData.email || "zinab@gmail.com",
         address: formData,
         items,
         amount,
       };
+
+      console.log("Sending order request:", {
+        url: `${backendUrl}/api/order/${method === "paystack" ? "paystack" : "place"}`,
+        payload: JSON.stringify(payload, null, 2),
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       try {
         const orderResponse = await axios.post(
@@ -186,6 +205,8 @@ const PlaceOrder = () => {
           payload,
           { headers: { Authorization: `Bearer ${token}` } }
         );
+
+        console.log("Order response:", JSON.stringify(orderResponse.data, null, 2));
 
         if (method === "paystack") {
           if (orderResponse.data.success && orderResponse.data.authorization_url) {
@@ -201,7 +222,12 @@ const PlaceOrder = () => {
           navigate("/orders");
         }
       } catch (error) {
-        console.error("Order Error:", error);
+        console.error("Order Error:", {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          requestPayload: JSON.stringify(payload, null, 2),
+        });
         if (error.response?.status === 401) {
           toast.error("Session expired. Please login again.");
           navigate("/login");
@@ -213,17 +239,29 @@ const PlaceOrder = () => {
         setPaymentLoading(false);
       }
     },
-    [formData, token, navigate, getCartAmount, delivery_charges, backendUrl, setCartItems, prepareOrderItems]
+    [
+      formData,
+      token,
+      navigate,
+      getCartAmount,
+      delivery_charges,
+      backendUrl,
+      setCartItems,
+      prepareOrderItems,
+    ]
   );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("Form submitted, validating...");
     if (!validateForm()) {
+      console.error("Form validation failed", errors);
       toast.error("Please correct the form errors");
       return;
     }
 
     if (!token) {
+      console.error("No token found");
       toast.error("Please login to place an order");
       navigate("/login");
       return;
@@ -265,7 +303,12 @@ const PlaceOrder = () => {
                     </h4>
                   </div>
                   <div>
-                    <label htmlFor="firstName" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">First Name*</label>
+                    <label
+                      htmlFor="firstName"
+                      className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300"
+                    >
+                      First Name*
+                    </label>
                     <div className="relative">
                       <input
                         id="firstName"
@@ -286,7 +329,12 @@ const PlaceOrder = () => {
                     )}
                   </div>
                   <div>
-                    <label htmlFor="lastName" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Last Name*</label>
+                    <label
+                      htmlFor="lastName"
+                      className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300"
+                    >
+                      Last Name*
+                    </label>
                     <div className="relative">
                       <input
                         id="lastName"
@@ -307,7 +355,12 @@ const PlaceOrder = () => {
                     )}
                   </div>
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Email*</label>
+                    <label
+                      htmlFor="email"
+                      className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300"
+                    >
+                      Email
+                    </label>
                     <div className="relative">
                       <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <input
@@ -319,7 +372,6 @@ const PlaceOrder = () => {
                         className="w-full pl-10 px-4 py-3 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 dark:focus:ring-indigo-500"
                         aria-invalid={!!errors.email}
                         aria-describedby="email-error"
-                        required
                       />
                     </div>
                     {errors.email && (
@@ -329,7 +381,12 @@ const PlaceOrder = () => {
                     )}
                   </div>
                   <div>
-                    <label htmlFor="phone" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Phone*</label>
+                    <label
+                      htmlFor="phone"
+                      className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300"
+                    >
+                      Phone*
+                    </label>
                     <div className="relative">
                       <FaPhone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <input
@@ -338,7 +395,7 @@ const PlaceOrder = () => {
                         onChange={onChangeHandler}
                         value={formData.phone}
                         name="phone"
-                        placeholder="e.g., 0241234567"
+                        placeholder="e.g., 0542271847"
                         className="w-full pl-10 px-4 py-3 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 dark:focus:ring-indigo-500"
                         aria-invalid={!!errors.phone}
                         aria-describedby="phone-error"
@@ -359,7 +416,12 @@ const PlaceOrder = () => {
                     </h4>
                   </div>
                   <div className="md:col-span-2">
-                    <label htmlFor="street" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Street Address</label>
+                    <label
+                      htmlFor="street"
+                      className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300"
+                    >
+                      Street Address
+                    </label>
                     <div className="relative">
                       <FaHome className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <input
@@ -373,7 +435,12 @@ const PlaceOrder = () => {
                     </div>
                   </div>
                   <div>
-                    <label htmlFor="city" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">City*</label>
+                    <label
+                      htmlFor="city"
+                      className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300"
+                    >
+                      City*
+                    </label>
                     <input
                       id="city"
                       type="text"
@@ -392,7 +459,12 @@ const PlaceOrder = () => {
                     )}
                   </div>
                   <div>
-                    <label htmlFor="region" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Region*</label>
+                    <label
+                      htmlFor="region"
+                      className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300"
+                    >
+                      Region
+                    </label>
                     <input
                       id="region"
                       type="text"
@@ -402,7 +474,6 @@ const PlaceOrder = () => {
                       className="w-full px-4 py-3 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 dark:focus:ring-indigo-500"
                       aria-invalid={!!errors.region}
                       aria-describedby="region-error"
-                      required
                     />
                     {errors.region && (
                       <p id="region-error" className="text-red-500 text-xs mt-1" role="alert">
@@ -411,7 +482,12 @@ const PlaceOrder = () => {
                     )}
                   </div>
                   <div>
-                    <label htmlFor="digitalAddress" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Digital Address (GPS)</label>
+                    <label
+                      htmlFor="digitalAddress"
+                      className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300"
+                    >
+                      Digital Address (GPS)
+                    </label>
                     <input
                       id="digitalAddress"
                       type="text"
@@ -423,7 +499,12 @@ const PlaceOrder = () => {
                     />
                   </div>
                   <div>
-                    <label htmlFor="country" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Country*</label>
+                    <label
+                      htmlFor="country"
+                      className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300"
+                    >
+                      Country*
+                    </label>
                     <select
                       id="country"
                       onChange={onChangeHandler}
@@ -459,7 +540,7 @@ const PlaceOrder = () => {
                   <motion.div
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                    className={`p-4 rounded-lg border-2 cursor-particle transition-all ${
                       paymentMethod === "paystack"
                         ? "border-indigo-600 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20"
                         : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
@@ -481,9 +562,7 @@ const PlaceOrder = () => {
                         <FaCreditCard />
                       </div>
                       <div className="flex-grow">
-                        <h4 className="font-medium text-gray-800 dark:text-gray-300">
-                          Online Payment
-                        </h4>
+                        <h4 className="font-medium text-gray-800 dark:text-gray-300">Online Payment</h4>
                         <p className="text-sm mt-1 text-gray-600 dark:text-gray-400">
                           Pay securely with Paystack (Cards, Mobile Money, etc.)
                         </p>
@@ -520,9 +599,7 @@ const PlaceOrder = () => {
                         <FaMoneyBillWave />
                       </div>
                       <div className="flex-grow">
-                        <h4 className="font-medium text-gray-800 dark:text-gray-300">
-                          Cash on Delivery
-                        </h4>
+                        <h4 className="font-medium text-gray-800 dark:text-gray-300">Cash on Delivery</h4>
                         <p className="text-sm mt-1 text-gray-600 dark:text-gray-400">
                           Pay when you receive your order
                         </p>

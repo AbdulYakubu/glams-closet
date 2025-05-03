@@ -15,7 +15,7 @@ const ShopContextProvider = (props) => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [ShowSearch, setShowSearch] = useState(true);
-  const [token, setToken] = useState("");
+  const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [cartItems, setCartItems] = useState({});
   const [wishlistItems, setWishlistItems] = useState([]);
   const [userLocation, setUserLocation] = useState("");
@@ -27,7 +27,7 @@ const ShopContextProvider = (props) => {
   };
 
   const convertPrice = (price) => {
-    const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
+    const numericPrice = typeof price === "string" ? parseFloat(price) : price;
     return `${currency}${numericPrice.toFixed(2)}`;
   };
 
@@ -63,6 +63,7 @@ const ShopContextProvider = (props) => {
 
     if (token) {
       try {
+        console.log("Adding to cart, URL:", `${backendUrl}/api/cart/add`, "Token:", token);
         await axios.post(
           `${backendUrl}/api/cart/add`,
           { itemId, size },
@@ -70,9 +71,17 @@ const ShopContextProvider = (props) => {
         );
         toast.success("Added to cart!");
       } catch (error) {
-        console.error("Add to cart error:", error.response?.data || error.message);
+        console.error("Add to cart error:", {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+          url: error.config?.url,
+        });
         if (error.response?.status === 401) {
           toast.error("Session expired. Please login again.");
+          logout();
+        } else if (error.response?.data?.message === "User not found") {
+          toast.error("User account not found. Please log in again.");
           logout();
         } else {
           toast.error(error.response?.data?.message || "Failed to add to cart");
@@ -91,6 +100,7 @@ const ShopContextProvider = (props) => {
 
       if (token) {
         try {
+          console.log("Adding to wishlist, URL:", `${backendUrl}/api/wishlist/add`, "Token:", token);
           await axios.post(
             `${backendUrl}/api/wishlist/add`,
             { itemId },
@@ -107,6 +117,7 @@ const ShopContextProvider = (props) => {
 
       if (token) {
         try {
+          console.log("Removing from wishlist, URL:", `${backendUrl}/api/wishlist/remove`, "Token:", token);
           await axios.post(
             `${backendUrl}/api/wishlist/remove`,
             { itemId },
@@ -121,12 +132,21 @@ const ShopContextProvider = (props) => {
   };
 
   const handleAuthError = (error) => {
-    console.error("API error:", error);
+    console.error("API error:", {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      url: error.config?.url,
+      token: token,
+    });
     if (error.response?.status === 401) {
       toast.error("Session expired. Please login again.");
       logout();
-    } else {
-      toast.error("Failed to update data");
+    } else if (error.response?.data?.message === "User not found") {
+      toast.error("User account not found. Please log in again.");
+      logout();
+    } else if (error.response?.status !== 404) {
+      toast.error(error.response?.data?.message || "Failed to update data");
     }
   };
 
@@ -156,6 +176,7 @@ const ShopContextProvider = (props) => {
   const getProductsData = async () => {
     setLoading(true);
     try {
+      console.log("Fetching products from:", `${backendUrl}/api/product/list`);
       const response = await axios.get(`${backendUrl}/api/product/list`);
       if (response.data.success) {
         setProducts(response.data.products);
@@ -173,13 +194,13 @@ const ShopContextProvider = (props) => {
   const getUserWishlist = async () => {
     if (token) {
       try {
-        const response = await axios.post(
-          `${backendUrl}/api/wishlist`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        console.log("Fetching wishlist from:", `${backendUrl}/api/wishlist`, "Token:", token);
+        const response = await axios.get(`${backendUrl}/api/wishlist`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         if (response.data.success) {
-          setWishlistItems(response.data.wishlist);
+          setWishlistItems(response.data.wishlist || []);
+          console.log("Wishlist data fetched:", response.data.wishlist);
         }
       } catch (error) {
         handleAuthError(error);
@@ -190,6 +211,7 @@ const ShopContextProvider = (props) => {
   const getUserCart = async () => {
     if (token) {
       try {
+        console.log("Fetching cart from:", `${backendUrl}/api/cart/get`, "Token:", token);
         const response = await axios.post(
           `${backendUrl}/api/cart/get`,
           {},
@@ -197,10 +219,32 @@ const ShopContextProvider = (props) => {
         );
         if (response.data.success) {
           setCartItems(response.data.cartData || {});
+          console.log("Cart data fetched:", response.data.cartData);
         }
       } catch (error) {
         handleAuthError(error);
       }
+    }
+  };
+
+  const login = async (email, password) => {
+    try {
+      console.log("Attempting login with:", { email });
+      const response = await axios.post(`${backendUrl}/api/user/login`, { email, password });
+      if (response.data.success) {
+        const newToken = response.data.token;
+        setToken(newToken);
+        localStorage.setItem("token", newToken);
+        console.log("Login successful, token:", newToken);
+        toast.success("Logged in successfully");
+        navigate("/");
+      } else {
+        throw new Error(response.data.message || "Login failed");
+      }
+    } catch (error) {
+      console.error("Login error:", error.response?.data || error.message);
+      toast.error(error.response?.data?.message || "Failed to login");
+      throw error;
     }
   };
 
@@ -211,12 +255,14 @@ const ShopContextProvider = (props) => {
     localStorage.removeItem("token");
     navigate("/login");
     toast.info("Logged out successfully");
+    console.log("Logged out, token cleared");
   };
 
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     if (storedToken && !token) {
       setToken(storedToken);
+      console.log("Restored token from localStorage:", storedToken);
     }
     getProductsData();
   }, []);
@@ -226,6 +272,7 @@ const ShopContextProvider = (props) => {
       getUserCart();
       getUserWishlist();
     }
+    console.log("ShopContext values:", { token, backendUrl, currency });
   }, [token]);
 
   const value = {
@@ -252,6 +299,7 @@ const ShopContextProvider = (props) => {
     getWishlistCount,
     getCartAmount,
     backendUrl,
+    login,
     logout,
     userLocation,
     setUserLocation,
@@ -259,9 +307,7 @@ const ShopContextProvider = (props) => {
     convertPrice,
   };
 
-  return (
-    <ShopContext.Provider value={value}>{props.children}</ShopContext.Provider>
-  );
+  return <ShopContext.Provider value={value}>{props.children}</ShopContext.Provider>;
 };
 
 export default ShopContextProvider;
