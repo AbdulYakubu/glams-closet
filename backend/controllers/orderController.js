@@ -1,7 +1,13 @@
 import mongoose from "mongoose";
 import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
+import productModel from "../models/productModel.js";
 import axios from "axios";
+import  sendOrderConfirmationEmail  from "../utils/emailService.js";
+import dotenv from "dotenv"
+//const { sendOrderConfirmationEmail } = require("../services/emailService");
+
+//require("dotenv").config();
 
 const placeOrder = async (req, res) => {
   console.log("Starting placeOrder (COD)");
@@ -110,14 +116,6 @@ const placeOrder = async (req, res) => {
     const savedOrder = await newOrder.save();
     console.log("COD Order saved successfully:", savedOrder._id);
 
-    console.log("Clearing user cart for user:", userId);
-    const updatedUser = await userModel.findByIdAndUpdate(userId, { cartData: {} }, { new: true });
-    if (!updatedUser) {
-      console.warn("Failed to clear cart for user:", userId);
-    } else {
-      console.log("User cart cleared successfully");
-    }
-
     // Verify order in database
     const verifiedOrder = await orderModel.findById(savedOrder._id);
     if (!verifiedOrder) {
@@ -126,7 +124,24 @@ const placeOrder = async (req, res) => {
     }
     console.log("Order verified in database:", verifiedOrder._id);
 
-    res.json({ success: true, message: "Order Placed", orderId: savedOrder._id });
+    console.log("Clearing user cart for user:", userId);
+    const updatedUser = await userModel.findByIdAndUpdate(userId, { cartData: {} }, { new: true });
+    if (!updatedUser) {
+      console.warn("Failed to clear cart for user:", userId);
+    } else {
+      console.log("User cart cleared successfully");
+    }
+
+    await sendOrderConfirmationEmail({
+      to: email,
+      orderId: savedOrder._id,
+      items: savedOrder.items,
+      amount: savedOrder.amount,
+      address: savedOrder.address,
+      paymentMethod: savedOrder.paymentMethod,
+    });
+
+    res.status(201).json({ success: true, orderId: savedOrder._id });
   } catch (error) {
     console.error("COD Error:", {
       message: error.message,
@@ -352,6 +367,15 @@ const paystackCallback = async (req, res) => {
       return res.status(404).json({ success: false, message: "Order not found" });
     }
 
+    await sendOrderConfirmationEmail({
+      to: order.email,
+      orderId: order._id,
+      items: order.items,
+      amount: order.amount,
+      address: order.address,
+      paymentMethod: order.paymentMethod,
+    });
+
     console.log("Clearing user cart for user:", order.userId);
     const updatedUser = await userModel.findByIdAndUpdate(order.userId, { cartData: {} }, { new: true });
     if (!updatedUser) {
@@ -360,7 +384,7 @@ const paystackCallback = async (req, res) => {
       console.log("User cart cleared successfully");
     }
 
-    res.redirect(`${process.env.FRONTEND_URL}/orders`);
+    res.redirect(`${process.env.FRONTEND_URL}/orders?orderId=${orderId}`);
   } catch (error) {
     console.error("Callback Error:", {
       message: error.message,
@@ -512,19 +536,18 @@ const trackOrder = async (req, res) => {
       payment: order.payment,
       paymentMethod: order.paymentMethod,
       status: order.status,
-      products: order.items || [], // Use order.items instead of order.products
+      products: order.items || [],
       address: order.address,
-      items: [], // Populated with enriched item data
+      items: [],
     };
 
-    // Check if order.items is an array and iterable
     if (Array.isArray(order.items)) {
       for (const item of order.items) {
         try {
           const product = await productModel.findById(item.productId);
           orderDetails.items.push({
             productId: item.productId,
-            name: product ? product.name : item.name || "Unknown Item", // Fallback to item.name
+            name: product ? product.name : item.name || "Unknown Item",
             image: product ? product.image || [] : item.image || [],
             price: item.price || (product ? product.price : 0),
             quantity: item.quantity || 1,
@@ -532,7 +555,6 @@ const trackOrder = async (req, res) => {
           });
         } catch (error) {
           console.warn(`Failed to fetch product ${item.productId}:`, error.message);
-          // Include item with stored data as fallback
           orderDetails.items.push({
             productId: item.productId,
             name: item.name || "Unknown Item",
@@ -545,7 +567,7 @@ const trackOrder = async (req, res) => {
       }
     } else {
       console.warn("order.items is not an array or is undefined:", order.items);
-      orderDetails.products = []; // Ensure products is an empty array if items is invalid
+      orderDetails.products = [];
     }
 
     console.log("Order details retrieved:", orderDetails);
@@ -560,6 +582,7 @@ const trackOrder = async (req, res) => {
     res.status(500).json({ success: false, message: "Error tracking order" });
   }
 };
+
 export {
   placeOrder,
   placeOrderPayStack,

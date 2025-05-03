@@ -43,12 +43,12 @@ const Orders = () => {
         return;
       }
 
-      console.log("Frontend: Sending request with token:", token); // Debug token
+      //console.log("Frontend: Sending request with token:", token); // Debug token
       const response = await axios.get(`${backendUrl}/api/order/userorders`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log("Frontend: API Response:", response.data); // Debug response
+      //console.log("Frontend: API Response:", response.data); // Debug response
 
       if (response.data.success) {
         const allItems = [];
@@ -69,7 +69,7 @@ const Orders = () => {
         });
 
         const sortedData = allItems.sort((a, b) => new Date(b.date) - new Date(a.date));
-        console.log("Frontend: Processed Orders:", sortedData); // Debug processed data
+        {/*console.log("Frontend: Processed Orders:", sortedData); // Debug processed data*/ }
         setOrderData(sortedData);
         setFilteredData(sortedData);
       } else {
@@ -102,7 +102,7 @@ const Orders = () => {
   useEffect(() => {
     let results = [...orderData];
 
-    console.log("Frontend: Applying filters:", { searchTerm, statusFilter, dateFilter });
+    //console.log("Frontend: Applying filters:", { searchTerm, statusFilter, dateFilter });
 
     if (searchTerm) {
       results = results.filter((item) =>
@@ -123,7 +123,7 @@ const Orders = () => {
       });
     }
 
-    console.log("Frontend: Filtered Data:", results);
+    //console.log("Frontend: Filtered Data:", results);
     setFilteredData(results);
   }, [searchTerm, statusFilter, dateFilter, orderData]);
 

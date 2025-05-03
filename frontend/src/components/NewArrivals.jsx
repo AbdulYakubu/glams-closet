@@ -53,7 +53,7 @@ const NewArrivals = () => {
     } catch (err) {
       setError('Failed to load new arrivals.');
       toast.error('Error loading new arrivals.');
-      console.error('Error loading new arrivals:', err);
+      //console.error('Error loading new arrivals:', err);
     }
   }, [sortedProducts]);
 

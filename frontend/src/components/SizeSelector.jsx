@@ -1,23 +1,32 @@
-import React from 'react';
+import React from "react";
 
-const SizeSelector = ({ sizes, selectedSize, onSelectSize, className = '' }) => {
+const SizeSelector = ({ sizes, selectedSize, onSelectSize, className = "" }) => {
   return (
-    <div className={`${className}`}>
-      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">SIZE</h3>
-      <div className="flex flex-wrap gap-2">
-        {sizes.map((size) => (
-          <button
-            key={size}
-            onClick={() => onSelectSize(size)}
-            className={`px-3 py-1.5 text-sm rounded-md border ${
-              selectedSize === size
-                ? 'bg-gray-900 text-white border-gray-900 dark:bg-gray-700 dark:border-gray-700'
-                : 'bg-white text-gray-800 border-gray-300 hover:border-gray-900 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:border-gray-400'
-            } transition-colors`}
-          >
-            {size}
-          </button>
-        ))}
+    <div className={`flex flex-col gap-2 ${className}`}>
+      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        Select Size
+      </label>
+      <div className="flex gap-2 flex-wrap">
+        {sizes && sizes.length > 0 ? (
+          sizes.map((size) => (
+            <button
+              key={size}
+              onClick={() => onSelectSize(size)}
+              className={`px-4 py-1 rounded-md border transition-colors ${
+                selectedSize === size
+                  ? "bg-indigo-600 text-white border-indigo-600 dark:bg-indigo-700 dark:border-indigo-700"
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
+              }`}
+              aria-label={`Select size ${size}`}
+            >
+              {size}
+            </button>
+          ))
+        ) : (
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            No sizes available
+          </p>
+        )}
       </div>
     </div>
   );

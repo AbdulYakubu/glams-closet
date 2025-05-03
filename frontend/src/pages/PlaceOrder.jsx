@@ -30,6 +30,7 @@ const PlaceOrder = () => {
     products,
     backendUrl,
     currency,
+    placeOrder: placeOrderContext,
   } = useContext(ShopContext);
 
   const [formData, setFormData] = useState(() => {
@@ -37,15 +38,15 @@ const PlaceOrder = () => {
     return savedData
       ? JSON.parse(savedData)
       : {
-          firstName: "Zinabu",
-          lastName: "Abdul Rhman",
-          email: "zinab@gmail.com",
+          firstName: "",
+          lastName: "",
+          email: "",
           street: "",
           city: "",
           region: "",
           digitalAddress: "",
           country: "Ghana",
-          phone: "0542271847",
+          phone: "",
         };
   });
 
@@ -57,11 +58,11 @@ const PlaceOrder = () => {
 
   // Debug re-renders
   useEffect(() => {
-    console.log("PlaceOrder re-rendered");
+    {/*console.log("PlaceOrder re-rendered");
     console.log("Token:", token ? "Present" : "Missing");
     console.log("CartItems:", JSON.stringify(cartItems, null, 2));
     console.log("Products:", JSON.stringify(products, null, 2));
-    console.log("FormData:", formData);
+    console.log("FormData:", formData);*/}
   }, [cartItems, products, token, formData]);
 
   // Save form data to localStorage
@@ -104,7 +105,7 @@ const PlaceOrder = () => {
     setErrors(newErrors);
     const valid = Object.keys(newErrors).length === 0;
     setIsFormValid(valid);
-    console.log("Form validation:", { isValid: valid, errors: newErrors });
+    {/*console.log("Form validation:", { isValid: valid, errors: newErrors });*/ }
     return valid;
   }, [formData]);
 
@@ -130,7 +131,7 @@ const PlaceOrder = () => {
   const prepareOrderItems = useMemo(() => {
     return () => {
       if (!cartItems || !products?.length) {
-        console.error("Cart or product data missing", { cartItems, products });
+        {/*console.error("Cart or product data missing", { cartItems, products });*/ }
         toast.error("Cart or product data is missing");
         return [];
       }
@@ -142,7 +143,7 @@ const PlaceOrder = () => {
           if (cartItems[productId][size] > 0) {
             const itemInfo = products.find((product) => product._id === productId);
             if (!itemInfo) {
-              console.error(`Product not found for ID ${productId}`);
+              {/*console.error(`Product not found for ID ${productId}`);*/ }
               toast.error(`Product ID ${productId} not found`);
               continue;
             }
@@ -158,10 +159,10 @@ const PlaceOrder = () => {
         }
       }
       if (!orderItems.length) {
-        console.error("No valid items in cart");
+        {/*console.error("No valid items in cart");*/ }
         toast.error("No valid items in cart");
       } else {
-        console.log("Prepared order items:", JSON.stringify(orderItems, null, 2));
+        toast.error("Prepared order items:", JSON.stringify(orderItems, null, 2));
       }
       return orderItems;
     };
@@ -173,7 +174,7 @@ const PlaceOrder = () => {
       const amount = Number(getCartAmount()) + Number(delivery_charges);
 
       if (!items.length || !amount || isNaN(amount) || amount <= 0) {
-        console.error("Invalid order data", { items, amount, cartItems, products });
+        //console.error("Invalid order data", { items, amount, cartItems, products });
         toast.error("Cart is empty or amount is invalid");
         throw new Error("Invalid cart data");
       }
@@ -206,7 +207,7 @@ const PlaceOrder = () => {
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
-        console.log("Order response:", JSON.stringify(orderResponse.data, null, 2));
+        {/*console.log("Order response:", JSON.stringify(orderResponse.data, null, 2));*/ }
 
         if (method === "paystack") {
           if (orderResponse.data.success && orderResponse.data.authorization_url) {
@@ -273,8 +274,34 @@ const PlaceOrder = () => {
   const confirmOrder = async () => {
     setShowConfirmation(false);
     setPaymentLoading(true);
+
     try {
-      await placeOrder(paymentMethod);
+      const items = prepareOrderItems();
+      const amount = Number(getCartAmount()) + Number(delivery_charges);
+
+      if (!items.length || !amount || isNaN(amount) || amount <= 0) {
+        toast.error("Cart is empty or amount is invalid");
+        setPaymentLoading(false);
+        return;
+      }
+
+      const result = await placeOrderContext({
+        items,
+        amount,
+        address: formData,
+        email: formData.email,
+        paymentMethod: paymentMethod === "cod" ? "COD" : "Paystack",
+      });
+
+      if (result.success) {
+        localStorage.removeItem("checkoutFormData");
+        setCartItems({});
+        if (!result.isRedirect) {
+          navigate("/orders");
+        }
+      } else {
+        setPaymentLoading(false);
+      }
     } catch (error) {
       setPaymentLoading(false);
     }

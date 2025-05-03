@@ -14,7 +14,7 @@ const Login = () => {
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    console.log("Login component mounted, token:", token, "backendUrl:", backendUrl);
+    //console.log("Login component mounted, token:", token, "backendUrl:", backendUrl);
     if (token) {
       navigate("/");
     }
@@ -28,9 +28,9 @@ const Login = () => {
           error.config._retry = true;
           try {
             const refreshToken = localStorage.getItem("refreshToken");
-            console.log("Attempting to refresh token:", refreshToken);
+            {/*console.log("Attempting to refresh token:", refreshToken);*/ }
             if (!refreshToken) {
-              console.log("No refresh token found");
+              //console.log("No refresh token found");
               toast.error("Session expired. Please login again.");
               setToken("");
               localStorage.removeItem("token");
@@ -41,7 +41,7 @@ const Login = () => {
             const response = await axios.post(`${backendUrl}/api/user/refresh-token`, { refreshToken });
             if (response.data.success) {
               const { token, refreshToken: newRefreshToken } = response.data;
-              console.log("Refresh successful, new token:", token);
+              {/*console.log("Refresh successful, new token:", token);*/ }
               setToken(token);
               localStorage.setItem("token", token);
               localStorage.setItem("refreshToken", newRefreshToken);
@@ -49,7 +49,7 @@ const Login = () => {
               return axios(error.config);
             }
           } catch (refreshError) {
-            console.error("Refresh token error:", refreshError);
+            {/*console.error("Refresh token error:", refreshError);*/ }
             toast.error("Session expired. Please login again.");
             setToken("");
             localStorage.removeItem("token");
@@ -88,12 +88,12 @@ const Login = () => {
         endpoint = "login";
       }
 
-      console.log("Submitting to:", `${backendUrl}/api/user/${endpoint}`, "Payload:", { email, password: "****" });
+      {/*console.log("Submitting to:", `${backendUrl}/api/user/${endpoint}`, "Payload:", { email, password: "****" });*/ }
       const response = await axios.post(`${backendUrl}/api/user/${endpoint}`, payload);
-      console.log("API response:", response.data);
+      {/*console.log("API response:", response.data);*/ }
       if (response.data.success) {
         const { token, refreshToken } = response.data;
-        console.log("Operation successful, token:", token, "refreshToken:", refreshToken);
+        {/*console.log("Operation successful, token:", token, "refreshToken:", refreshToken);*/ }
         setToken(token);
         localStorage.setItem("token", token);
         localStorage.setItem("refreshToken", refreshToken || "");

@@ -21,9 +21,9 @@ const Cart = () => {
   const [isRemoving, setIsRemoving] = useState(false);
 
   // Debug re-renders
-  useEffect(() => {
+  {/*useEffect(() => {
     console.log("Cart re-rendered");
-  });
+  });*/}
 
   useEffect(() => {
     if (products.length > 0) {

@@ -63,7 +63,6 @@ const ShopContextProvider = (props) => {
 
     if (token) {
       try {
-        console.log("Adding to cart, URL:", `${backendUrl}/api/cart/add`, "Token:", token);
         await axios.post(
           `${backendUrl}/api/cart/add`,
           { itemId, size },
@@ -100,7 +99,6 @@ const ShopContextProvider = (props) => {
 
       if (token) {
         try {
-          console.log("Adding to wishlist, URL:", `${backendUrl}/api/wishlist/add`, "Token:", token);
           await axios.post(
             `${backendUrl}/api/wishlist/add`,
             { itemId },
@@ -117,7 +115,6 @@ const ShopContextProvider = (props) => {
 
       if (token) {
         try {
-          console.log("Removing from wishlist, URL:", `${backendUrl}/api/wishlist/remove`, "Token:", token);
           await axios.post(
             `${backendUrl}/api/wishlist/remove`,
             { itemId },
@@ -176,7 +173,6 @@ const ShopContextProvider = (props) => {
   const getProductsData = async () => {
     setLoading(true);
     try {
-      console.log("Fetching products from:", `${backendUrl}/api/product/list`);
       const response = await axios.get(`${backendUrl}/api/product/list`);
       if (response.data.success) {
         setProducts(response.data.products);
@@ -194,13 +190,11 @@ const ShopContextProvider = (props) => {
   const getUserWishlist = async () => {
     if (token) {
       try {
-        console.log("Fetching wishlist from:", `${backendUrl}/api/wishlist`, "Token:", token);
         const response = await axios.get(`${backendUrl}/api/wishlist`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (response.data.success) {
           setWishlistItems(response.data.wishlist || []);
-          console.log("Wishlist data fetched:", response.data.wishlist);
         }
       } catch (error) {
         handleAuthError(error);
@@ -211,7 +205,6 @@ const ShopContextProvider = (props) => {
   const getUserCart = async () => {
     if (token) {
       try {
-        console.log("Fetching cart from:", `${backendUrl}/api/cart/get`, "Token:", token);
         const response = await axios.post(
           `${backendUrl}/api/cart/get`,
           {},
@@ -219,7 +212,6 @@ const ShopContextProvider = (props) => {
         );
         if (response.data.success) {
           setCartItems(response.data.cartData || {});
-          console.log("Cart data fetched:", response.data.cartData);
         }
       } catch (error) {
         handleAuthError(error);
@@ -229,13 +221,11 @@ const ShopContextProvider = (props) => {
 
   const login = async (email, password) => {
     try {
-      console.log("Attempting login with:", { email });
       const response = await axios.post(`${backendUrl}/api/user/login`, { email, password });
       if (response.data.success) {
         const newToken = response.data.token;
         setToken(newToken);
         localStorage.setItem("token", newToken);
-        console.log("Login successful, token:", newToken);
         toast.success("Logged in successfully");
         navigate("/");
       } else {
@@ -255,14 +245,54 @@ const ShopContextProvider = (props) => {
     localStorage.removeItem("token");
     navigate("/login");
     toast.info("Logged out successfully");
-    console.log("Logged out, token cleared");
+  };
+
+  const placeOrder = async ({ items, amount, address, email, paymentMethod }) => {
+    try {
+      if (!token) {
+        toast.error("Please login to place an order");
+        navigate("/login");
+        return { success: false };
+      }
+
+      const payload = { items, amount, address, email };
+      const endpoint = paymentMethod === "Paystack" 
+        ? "/api/order/paystack" 
+        : "/api/order/place";
+
+      const response = await axios.post(`${backendUrl}${endpoint}`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.data.success) {
+        if (paymentMethod === "Paystack") {
+          // Redirect to PayStack payment URL
+          window.location.href = response.data.authorization_url;
+          return { success: true, isRedirect: true };
+        } else {
+          // COD order placed
+          toast.success("Order placed! Confirmation email sent.");
+          setCartItems({});
+          return { success: true, orderId: response.data.orderId };
+        }
+      } else {
+        toast.error(response.data.message || "Failed to place order");
+        return { success: false };
+      }
+    } catch (error) {
+      console.error("Place Order Error:", {
+        message: error.message,
+        response: error.response?.data,
+      });
+      toast.error(error.response?.data?.message || "Error placing order");
+      return { success: false };
+    }
   };
 
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     if (storedToken && !token) {
       setToken(storedToken);
-      console.log("Restored token from localStorage:", storedToken);
     }
     getProductsData();
   }, []);
@@ -272,7 +302,6 @@ const ShopContextProvider = (props) => {
       getUserCart();
       getUserWishlist();
     }
-    console.log("ShopContext values:", { token, backendUrl, currency });
   }, [token]);
 
   const value = {
@@ -305,6 +334,7 @@ const ShopContextProvider = (props) => {
     setUserLocation,
     shippingRates,
     convertPrice,
+    placeOrder,
   };
 
   return <ShopContext.Provider value={value}>{props.children}</ShopContext.Provider>;

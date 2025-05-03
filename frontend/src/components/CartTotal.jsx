@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ShopContext } from '../context/ShopContext';
 import Title from './Title';
 import { FiTag, FiTruck, FiShield, FiGift, FiMapPin } from 'react-icons/fi';
+import { toast } from 'react-toastify';
 
 const CartTotal = () => {
   const { 
@@ -15,9 +16,9 @@ const CartTotal = () => {
   } = useContext(ShopContext);
 
   // Debug re-renders
-  useEffect(() => {
-    console.log("CartTotal re-rendered");
-  });
+  {/*useEffect(() => {
+    toast("CartTotal re-rendered");
+  }); */}
 
   // Validate shippingRates and userLocation
   const validatedShippingRates = shippingRates || {

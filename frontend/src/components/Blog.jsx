@@ -42,7 +42,7 @@ const Blog = () => {
       ...prev,
       [blogTitle]: true
     }));
-    console.error(`Failed to load blog image for: ${blogTitle}`);
+    toast.error(`Failed to load blog image for: ${blogTitle}`);
   };
 
   const handleAuthorImageError = (blogTitle) => {
@@ -50,7 +50,7 @@ const Blog = () => {
       ...prev,
       [blogTitle]: true
     }));
-    console.error(`Failed to load author image for: ${blogTitle}`);
+    toast.error(`Failed to load author image for: ${blogTitle}`);
   };
 
   const handleReadMore = (title) => {
