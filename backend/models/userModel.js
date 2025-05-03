@@ -16,6 +16,7 @@ const userSchema = new mongoose.Schema({
   },
   cartData: { type: Object, default: {} },
   wishlistData: { type: Array, default: [] },
+  date: { type: Date, default: Date.now },
 });
 
 const userModel = mongoose.models.User || mongoose.model("User", userSchema);

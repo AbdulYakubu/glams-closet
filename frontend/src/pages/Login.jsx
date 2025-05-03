@@ -187,7 +187,7 @@ const Login = () => {
           {currentState === "Login" && (
             <p className="mt-4 text-center text-sm">
               Forgot your password?{" "}
-              <Link to="/request-password-reset" className="text-blue-600 hover:underline">
+              <Link to="/reset-password" className="text-blue-600 hover:underline">
                 Reset it here
               </Link>
             </p>

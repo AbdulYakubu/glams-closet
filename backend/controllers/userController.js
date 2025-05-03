@@ -1,9 +1,13 @@
 import userModel from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import { sendWelcomeEmail }  from "../utils/emailService.js";
 
 // Debug: Verify model name
 console.log("Imported userModel name:", userModel.modelName);
+// Store pending cart reminders (in-memory for simplicity)
+const cartReminders = new Map();
+
 
 const registerUser = async (req, res) => {
   const { firstName, lastName, email, password } = req.body;
@@ -23,6 +27,16 @@ const registerUser = async (req, res) => {
     const user = new userModel({ firstName, lastName, email, password: hashedPassword });
     await user.save();
     console.log("User registered:", user._id);
+ 
+    // Send welcome email (non-blocking, don't fail registration if email fails)
+    try {
+      await sendWelcomeEmail({
+        to: email,
+        name: `${firstName} ${lastName}`,
+      });
+    } catch (emailError) {
+      console.error("Failed to send welcome email:", emailError);
+    }
 
     res.json({ success: true, user: { firstName, lastName, email } });
   } catch (error) {
@@ -33,6 +47,7 @@ const registerUser = async (req, res) => {
     }
     res.status(500).json({ success: false, message });
   }
+  
 };
 
 const loginUser = async (req, res) => {

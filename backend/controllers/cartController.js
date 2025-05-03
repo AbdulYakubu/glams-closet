@@ -1,4 +1,8 @@
 import userModel from "../models/userModel.js";
+import { sendCartReminderEmail }  from "../utils/emailService.js";
+
+// Store pending cart reminders (in-memory for simplicity)
+const cartReminders = new Map();
 
 const addToCart = async (req, res) => {
   try {
@@ -33,11 +37,50 @@ const addToCart = async (req, res) => {
 
     console.log("Cart updated for user:", req.userId, "New cartData:", user.cartData);
     res.json({ success: true, message: "Added to cart", cartData: user.cartData });
+   // Clear any existing reminder for this user
+    if (cartReminders.has(req.userId)) {
+      clearTimeout(cartReminders.get(req.userId));
+      cartReminders.delete(req.userId);
+    }
+
+    // Schedule cart reminder email after 1 hour
+    const reminderTimeout = setTimeout(async () => {
+      try {
+        const updatedUser = await userModel.findById(req.userId);
+        if (updatedUser && Object.keys(updatedUser.cartData).length > 0) {
+          const items = Object.entries(updatedUser.cartData).flatMap(([itemId, item]) =>
+            Object.entries(item.sizes).map(([size, quantity]) => ({
+              itemId,
+              name: item.name,
+              size,
+              quantity,
+              price: item.price,
+              image: item.image,
+            }))
+          );
+          await sendCartReminderEmail({
+            to: updatedUser.email,
+            name: `${updatedUser.firstName} ${updatedUser.lastName}`,
+            items,
+          });
+        }
+      } catch (error) {
+        console.error("Cart Reminder Error:", error);
+      } finally {
+        cartReminders.delete(req.userId);
+      }
+    }, 60 * 60 * 1000); // 1 hour
+
+    cartReminders.set(req.userId, reminderTimeout);
+
+    res.json({ success: true, message: "Added to cart", cartData: user.cartData });
   } catch (error) {
     console.error("Add to cart error:", error.message);
     res.status(500).json({ success: false, message: "Error adding to cart" });
   }
+  
 };
+
 
 const updateCart = async (req, res) => {
   try {
@@ -76,6 +119,45 @@ const updateCart = async (req, res) => {
 
     await user.save();
     console.log("Cart updated for user:", req.userId, "New cartData:", user.cartData);
+    res.json({ success: true, message: "Cart updated", cartData: user.cartData });
+  // Clear any existing reminder for this user
+    if (cartReminders.has(req.userId)) {
+      clearTimeout(cartReminders.get(req.userId));
+      cartReminders.delete(req.userId);
+    }
+
+    // Schedule cart reminder email after 1 hour if cart is not empty
+    if (Object.keys(user.cartData).length > 0) {
+      const reminderTimeout = setTimeout(async () => {
+        try {
+          const updatedUser = await userModel.findById(req.userId);
+          if (updatedUser && Object.keys(updatedUser.cartData).length > 0) {
+            const items = Object.entries(updatedUser.cartData).flatMap(([itemId, item]) =>
+              Object.entries(item.sizes).map(([size, quantity]) => ({
+                itemId,
+                name: item.name,
+                size,
+                quantity,
+                price: item.price,
+                image: item.image,
+              }))
+            );
+            await sendCartReminderEmail({
+              to: updatedUser.email,
+              name: `${updatedUser.firstName} ${updatedUser.lastName}`,
+              items,
+            });
+          }
+        } catch (error) {
+          console.error("Cart Reminder Error:", error);
+        } finally {
+          cartReminders.delete(req.userId);
+        }
+      }, 60 * 60 * 1000); // 1 hour
+
+      cartReminders.set(req.userId, reminderTimeout);
+    }
+
     res.json({ success: true, message: "Cart updated", cartData: user.cartData });
   } catch (error) {
     console.error("Update cart error:", error.message);

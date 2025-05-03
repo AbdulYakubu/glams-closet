@@ -43,7 +43,7 @@ const Footer = () => {
       { name: 'Contact', path: '/contact', label: 'Go to Contact page' },
       { name: 'Orders', path: '/orders', label: 'Go to Orders page' },
       { name: 'Returns', path: '/returns', label: 'Go to Returns page' },
-      {name: 'Track Orders', path: '/track-order', label: 'Go to Track Orders page'}
+      {name: 'Track Orders', path: '/track-order/:orderId', label: 'Go to Track Orders page'}
     ],
     information: [
       { name: 'About', path: '/about', label: 'Go to About page' },

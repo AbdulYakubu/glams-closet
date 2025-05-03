@@ -24,6 +24,7 @@ import CookiesPage from './components/CookiesPage'
 //import { DarkModeProvider } from './context/DarkModeContext';
 import MyAccount from './pages/MyAccount'
 import TrackOrder from './components/TrackOrder'
+import ResetPassword from './components/ResetPassword'
 
 
 
@@ -34,6 +35,7 @@ const App = () => {
       <Header />
       <Routes>
         <Route path='/' element={<Home />} />
+        <Route path='/reset-password' element={<ResetPassword/>}/>
         <Route path='/account' element={<MyAccount />} />
         <Route path='/track-order/:orderId' element={<TrackOrder/>}/>
         <Route path='/cookies' element={<CookiesPage/>}/>

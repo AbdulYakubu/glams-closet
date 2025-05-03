@@ -6,6 +6,7 @@ import axios from "axios";
 export const ShopContext = createContext();
 
 const ShopContextProvider = (props) => {
+
   const currency = "₵";
   const delivery_charges = 10;
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
@@ -19,6 +20,8 @@ const ShopContextProvider = (props) => {
   const [cartItems, setCartItems] = useState({});
   const [wishlistItems, setWishlistItems] = useState([]);
   const [userLocation, setUserLocation] = useState("");
+
+  
 
   const shippingRates = {
     Local: { fee: 10, freeThreshold: 200 },

@@ -3,7 +3,7 @@ import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
 import productModel from "../models/productModel.js";
 import axios from "axios";
-import  sendOrderConfirmationEmail  from "../utils/emailService.js";
+import { sendOrderConfirmationEmail }  from "../utils/emailService.js";
 import dotenv from "dotenv"
 //const { sendOrderConfirmationEmail } = require("../services/emailService");
 
