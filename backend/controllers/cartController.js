@@ -1,5 +1,5 @@
 import userModel from "../models/userModel.js";
-import { sendCartReminderEmail }  from "../utils/emailService.js";
+import { sendCartReminderEmail } from "../utils/emailService.js";
 
 // Store pending cart reminders (in-memory for simplicity)
 const cartReminders = new Map();
@@ -36,8 +36,8 @@ const addToCart = async (req, res) => {
     await user.save();
 
     console.log("Cart updated for user:", req.userId, "New cartData:", user.cartData);
-    res.json({ success: true, message: "Added to cart", cartData: user.cartData });
-   // Clear any existing reminder for this user
+
+    // Clear any existing reminder for this user
     if (cartReminders.has(req.userId)) {
       clearTimeout(cartReminders.get(req.userId));
       cartReminders.delete(req.userId);
@@ -48,16 +48,14 @@ const addToCart = async (req, res) => {
       try {
         const updatedUser = await userModel.findById(req.userId);
         if (updatedUser && Object.keys(updatedUser.cartData).length > 0) {
-          const items = Object.entries(updatedUser.cartData).flatMap(([itemId, item]) =>
-            Object.entries(item.sizes).map(([size, quantity]) => ({
+          const items = Object.entries(updatedUser.cartData).flatMap(([itemId, sizes]) =>
+            Object.entries(sizes).map(([size, quantity]) => ({
               itemId,
-              name: item.name,
               size,
               quantity,
-              price: item.price,
-              image: item.image,
             }))
           );
+          
           await sendCartReminderEmail({
             to: updatedUser.email,
             name: `${updatedUser.firstName} ${updatedUser.lastName}`,
@@ -73,14 +71,12 @@ const addToCart = async (req, res) => {
 
     cartReminders.set(req.userId, reminderTimeout);
 
-    res.json({ success: true, message: "Added to cart", cartData: user.cartData });
+    return res.json({ success: true, message: "Added to cart", cartData: user.cartData });
   } catch (error) {
     console.error("Add to cart error:", error.message);
-    res.status(500).json({ success: false, message: "Error adding to cart" });
+    return res.status(500).json({ success: false, message: "Error adding to cart" });
   }
-  
 };
-
 
 const updateCart = async (req, res) => {
   try {
@@ -119,8 +115,8 @@ const updateCart = async (req, res) => {
 
     await user.save();
     console.log("Cart updated for user:", req.userId, "New cartData:", user.cartData);
-    res.json({ success: true, message: "Cart updated", cartData: user.cartData });
-  // Clear any existing reminder for this user
+
+    // Clear any existing reminder for this user
     if (cartReminders.has(req.userId)) {
       clearTimeout(cartReminders.get(req.userId));
       cartReminders.delete(req.userId);
@@ -132,16 +128,14 @@ const updateCart = async (req, res) => {
         try {
           const updatedUser = await userModel.findById(req.userId);
           if (updatedUser && Object.keys(updatedUser.cartData).length > 0) {
-            const items = Object.entries(updatedUser.cartData).flatMap(([itemId, item]) =>
-              Object.entries(item.sizes).map(([size, quantity]) => ({
+            const items = Object.entries(updatedUser.cartData).flatMap(([itemId, sizes]) =>
+              Object.entries(sizes).map(([size, quantity]) => ({
                 itemId,
-                name: item.name,
                 size,
                 quantity,
-                price: item.price,
-                image: item.image,
               }))
             );
+            
             await sendCartReminderEmail({
               to: updatedUser.email,
               name: `${updatedUser.firstName} ${updatedUser.lastName}`,
@@ -158,10 +152,10 @@ const updateCart = async (req, res) => {
       cartReminders.set(req.userId, reminderTimeout);
     }
 
-    res.json({ success: true, message: "Cart updated", cartData: user.cartData });
+    return res.json({ success: true, message: "Cart updated", cartData: user.cartData });
   } catch (error) {
     console.error("Update cart error:", error.message);
-    res.status(500).json({ success: false, message: "Error updating cart" });
+    return res.status(500).json({ success: false, message: "Error updating cart" });
   }
 };
 
@@ -179,13 +173,13 @@ const getUserCart = async (req, res) => {
     }
 
     console.log("Cart fetched for user:", req.userId, "cartData:", user.cartData);
-    res.json({
+    return res.json({
       success: true,
       cartData: user.cartData || {},
     });
   } catch (error) {
     console.error("Get cart error:", error.message);
-    res.status(500).json({ success: false, message: "Error fetching cart" });
+    return res.status(500).json({ success: false, message: "Error fetching cart" });
   }
 };
 
