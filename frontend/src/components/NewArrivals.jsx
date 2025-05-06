@@ -96,7 +96,7 @@ const NewArrivals = () => {
     };
   }, [closeSidebar]);
 
-  const handleAddToCart = useCallback(() => {
+   const handleAddToCart = useCallback(() => {
     if (!selectedProduct) return;
     
     if ((selectedProduct.sizes && !selectedSize) || (selectedProduct.colors && !selectedColor)) {
@@ -104,8 +104,11 @@ const NewArrivals = () => {
       return;
     }
 
+    // Extract just the size value (handle both string and object cases)
+    const sizeValue = selectedSize?.size || selectedSize;
+    
     const options = {
-      size: selectedSize,
+      size: sizeValue,  // Now this will always be a string
       color: selectedColor
     };
 
@@ -113,6 +116,7 @@ const NewArrivals = () => {
     toast.success(`${selectedProduct.name} added to cart!`);
     closeSidebar();
   }, [selectedProduct, selectedSize, selectedColor, addToCart, closeSidebar]);
+
 
   const handleWishlistToggle = useCallback((productId, productName) => {
     updateWishlist(productId);

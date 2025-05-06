@@ -13,7 +13,7 @@ const Orders = ({ token }) => {
 
     try {
       console.log("Fetching Orders - URL:", "/api/order/list");
-      const response = await axiosInstance.post("/api/order/list", {});
+      const response = await axiosInstance.get("/api/order/all");
       console.log("Orders Response:", response.data);
 
       if (response.data.success) {

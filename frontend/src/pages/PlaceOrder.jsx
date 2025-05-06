@@ -296,7 +296,7 @@ const PlaceOrder = () => {
       });
 
       if (result.success) {
-        localStorage.removeItem("checkoutFormData");
+        localStorage.removeItem("checkoutFormData", CART_STORAGE_KEY);
         setCartItems({});
         if (!result.isRedirect) {
           navigate("/orders");

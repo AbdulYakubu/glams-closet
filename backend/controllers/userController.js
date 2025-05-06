@@ -1,7 +1,9 @@
 import userModel from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import { sendWelcomeEmail }  from "../utils/emailService.js";
+import { sendWelcomeEmail, sendPasswordResetEmail } from "../utils/emailService.js";
+import asyncHandler from "express-async-handler";
+import crypto from "crypto";
 
 // Debug: Verify model name
 console.log("Imported userModel name:", userModel.modelName);
@@ -259,5 +261,80 @@ const updateUserProfile = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+// Reset Password
+const requestPasswordReset = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  try {
+    console.log("Password reset request for:", { email });
 
-export { registerUser, loginUser, adminLogin, getUserProfile, updateUserProfile, userOrders, refreshToken };
+    // Validate input
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+
+    // Check if user exists
+    const user = await userModel.findOne({ email });
+    if (!user) {
+      console.log("User not found for password reset:", email);
+      return res.status(400).json({ success: false, message: "User not registered" });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetTokenExpiry = Date.now() + 3600000; // 1 hour expiry
+
+    // Save token and expiry to user
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = resetTokenExpiry;
+    await user.save();
+    console.log("Reset token generated for user:", user._id, "Token:", resetToken);
+
+    // Send reset email
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+    try {
+      await sendPasswordResetEmail({
+        to: email,
+        name: `${user.firstName} ${user.lastName}`,
+        resetUrl,
+      });
+      console.log("Password reset email sent to:", email);
+    } catch (emailError) {
+      console.error("Failed to send password reset email:", emailError);
+      // Continue to return success to avoid blocking the user
+    }
+
+    res.json({ success: true, message: "Password reset email sent" });
+  } catch (error) {
+    console.error("Password reset error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+const resetPassword = asyncHandler(async (req, res) => {
+  const { token, newPassword } = req.body;
+  try {
+    console.log("Password reset attempt with token:", token);
+    if (!token || !newPassword) {
+      return res.status(400).json({ success: false, message: "Token and new password are required" });
+    }
+    const user = await userModel.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+    if (!user) {
+      console.log("Invalid or expired reset token");
+      return res.status(400).json({ success: false, message: "Invalid or expired reset token" });
+    }
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+    console.log("Password reset successful for user:", user._id);
+    res.json({ success: true, message: "Password reset successful" });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+export { registerUser, loginUser, adminLogin, getUserProfile, updateUserProfile, resetPassword, userOrders, refreshToken, requestPasswordReset, };

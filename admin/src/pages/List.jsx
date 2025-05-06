@@ -11,7 +11,7 @@ const List = ({ token }) => {
   const fetchList = async () => {
     try {
       console.log("Fetching Products - URL:", "/api/product/list");
-      const response = await axiosInstance.get("/api/product/list");
+      const response = await axiosInstance.post("/api/product/list");
       console.log("Products Response:", response.data);
 
       if (response.data.success) {

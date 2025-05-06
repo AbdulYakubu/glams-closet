@@ -6,22 +6,62 @@ import axios from "axios";
 export const ShopContext = createContext();
 
 const ShopContextProvider = (props) => {
-
   const currency = "₵";
   const delivery_charges = 10;
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const navigate = useNavigate();
+
+  const CART_STORAGE_KEY = 'cart_items';
+  const WISHLIST_STORAGE_KEY = 'wishlist_items'; // New key for wishlist
+
+  // Function to load cart from localStorage
+  const loadCartFromStorage = () => {
+    try {
+      const storedCart = localStorage.getItem(CART_STORAGE_KEY);
+      return storedCart ? JSON.parse(storedCart) : {};
+    } catch (error) {
+      console.error("Failed to load cart from storage:", error);
+      return {};
+    }
+  };
+
+  // Function to save cart to localStorage
+  const saveCartToStorage = (cart) => {
+    try {
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+    } catch (error) {
+      console.error("Failed to save cart to storage:", error);
+    }
+  };
+
+  // Function to load wishlist from localStorage
+  const loadWishlistFromStorage = () => {
+    try {
+      const storedWishlist = localStorage.getItem(WISHLIST_STORAGE_KEY);
+      return storedWishlist ? JSON.parse(storedWishlist) : [];
+    } catch (error) {
+      console.error("Failed to load wishlist from storage:", error);
+      return [];
+    }
+  };
+
+  // Function to save wishlist to localStorage
+  const saveWishlistToStorage = (wishlist) => {
+    try {
+      localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(wishlist));
+    } catch (error) {
+      console.error("Failed to save wishlist to storage:", error);
+    }
+  };
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [ShowSearch, setShowSearch] = useState(true);
   const [token, setToken] = useState(localStorage.getItem("token") || "");
-  const [cartItems, setCartItems] = useState({});
-  const [wishlistItems, setWishlistItems] = useState([]);
+  const [cartItems, setCartItems] = useState(loadCartFromStorage());
+  const [wishlistItems, setWishlistItems] = useState(loadWishlistFromStorage()); // Initialize with localStorage
   const [userLocation, setUserLocation] = useState("");
-
-  
 
   const shippingRates = {
     Local: { fee: 10, freeThreshold: 200 },
@@ -34,99 +74,106 @@ const ShopContextProvider = (props) => {
     return `${currency}${numericPrice.toFixed(2)}`;
   };
 
+  // Sync cart and wishlist across tabs
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === CART_STORAGE_KEY) {
+        setCartItems(loadCartFromStorage());
+      }
+      if (e.key === WISHLIST_STORAGE_KEY) {
+        setWishlistItems(loadWishlistFromStorage());
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   const updateQuantity = (itemId, size, newQuantity) => {
     setCartItems((prevCart) => {
       const updatedCart = { ...prevCart };
+      const sizeKey = String(size);
+      
       if (!updatedCart[itemId]) updatedCart[itemId] = {};
+      
       if (newQuantity > 0) {
-        updatedCart[itemId][size] = newQuantity;
+        updatedCart[itemId][sizeKey] = newQuantity;
       } else {
-        delete updatedCart[itemId][size];
+        delete updatedCart[itemId][sizeKey];
         if (Object.keys(updatedCart[itemId]).length === 0) {
           delete updatedCart[itemId];
         }
       }
+      
+      saveCartToStorage(updatedCart);
       return updatedCart;
     });
   };
 
-  const addToCart = async (itemId, size) => {
+  const addToCart = async (itemId, options = {}) => {
+    const size = typeof options.size === 'object' ? options.size.size || options.size : options.size;
+    
     if (!size) {
       toast.error("Please select a size first");
       return;
     }
 
-    const updatedCart = { ...cartItems };
-    if (updatedCart[itemId]) {
-      updatedCart[itemId][size] = (updatedCart[itemId][size] || 0) + 1;
-    } else {
-      updatedCart[itemId] = { [size]: 1 };
-    }
-    setCartItems(updatedCart);
+    const sizeKey = String(size);
+
+    setCartItems(prevCart => {
+      const updatedCart = { ...prevCart };
+      if (updatedCart[itemId]) {
+        updatedCart[itemId][sizeKey] = (updatedCart[itemId][sizeKey] || 0) + 1;
+      } else {
+        updatedCart[itemId] = { [sizeKey]: 1 };
+      }
+      saveCartToStorage(updatedCart);
+      return updatedCart;
+    });
 
     if (token) {
       try {
         await axios.post(
           `${backendUrl}/api/cart/add`,
-          { itemId, size },
+          { itemId, size: sizeKey },
           { headers: { Authorization: `Bearer ${token}` } }
         );
         toast.success("Added to cart!");
       } catch (error) {
-        console.error("Add to cart error:", {
-          message: error.message,
-          status: error.response?.status,
-          data: error.response?.data,
-          url: error.config?.url,
-        });
-        if (error.response?.status === 401) {
-          toast.error("Session expired. Please login again.");
-          logout();
-        } else if (error.response?.data?.message === "User not found") {
-          toast.error("User account not found. Please log in again.");
-          logout();
-        } else {
-          toast.error(error.response?.data?.message || "Failed to add to cart");
-        }
+        console.error("Add to cart error:", error);
+        handleAuthError(error);
       }
     }
   };
 
   const updateWishlist = async (itemId) => {
-    const updatedWishlist = [...wishlistItems];
-    const index = updatedWishlist.indexOf(itemId);
+    setWishlistItems((prevWishlist) => {
+      const updatedWishlist = [...prevWishlist];
+      const index = updatedWishlist.indexOf(itemId);
 
-    if (index === -1) {
-      updatedWishlist.push(itemId);
-      setWishlistItems(updatedWishlist);
-
-      if (token) {
-        try {
-          await axios.post(
-            `${backendUrl}/api/wishlist/add`,
-            { itemId },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          toast.success("Added to wishlist!");
-        } catch (error) {
-          handleAuthError(error);
-        }
+      if (index === -1) {
+        updatedWishlist.push(itemId);
+      } else {
+        updatedWishlist.splice(index, 1);
       }
-    } else {
-      updatedWishlist.splice(index, 1);
-      setWishlistItems(updatedWishlist);
 
-      if (token) {
-        try {
-          await axios.post(
-            `${backendUrl}/api/wishlist/remove`,
-            { itemId },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          toast.info("Removed from wishlist.");
-        } catch (error) {
-          handleAuthError(error);
-        }
+      saveWishlistToStorage(updatedWishlist); // Save to localStorage
+      return updatedWishlist;
+    });
+
+    if (token) {
+      try {
+        const endpoint = wishlistItems.includes(itemId)
+          ? `${backendUrl}/api/wishlist/remove`
+          : `${backendUrl}/api/wishlist/add`;
+        await axios.post(
+          endpoint,
+          { itemId },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        toast.success(wishlistItems.includes(itemId) ? "Removed from wishlist!" : "Added to wishlist!");
+      } catch (error) {
+        handleAuthError(error);
       }
     }
   };
@@ -137,13 +184,9 @@ const ShopContextProvider = (props) => {
       status: error.response?.status,
       data: error.response?.data,
       url: error.config?.url,
-      token: token,
     });
-    if (error.response?.status === 401) {
-      toast.error("Session expired. Please login again.");
-      logout();
-    } else if (error.response?.data?.message === "User not found") {
-      toast.error("User account not found. Please log in again.");
+    if (error.response?.status === 401 || error.response?.data?.message === "User not found") {
+      toast.error("Session expired or user not found. Please login again.");
       logout();
     } else if (error.response?.status !== 404) {
       toast.error(error.response?.data?.message || "Failed to update data");
@@ -176,7 +219,7 @@ const ShopContextProvider = (props) => {
   const getProductsData = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${backendUrl}/api/product/list`);
+      const response = await axios.post(`${backendUrl}/api/product/list`);
       if (response.data.success) {
         setProducts(response.data.products);
       } else {
@@ -197,7 +240,9 @@ const ShopContextProvider = (props) => {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (response.data.success) {
-          setWishlistItems(response.data.wishlist || []);
+          const backendWishlist = response.data.wishlist || [];
+          setWishlistItems(backendWishlist);
+          saveWishlistToStorage(backendWishlist); // Sync backend wishlist to localStorage
         }
       } catch (error) {
         handleAuthError(error);
@@ -214,7 +259,9 @@ const ShopContextProvider = (props) => {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (response.data.success) {
-          setCartItems(response.data.cartData || {});
+          const backendCart = response.data.cartData || {};
+          setCartItems(backendCart);
+          saveCartToStorage(backendCart); // Sync backend cart to localStorage
         }
       } catch (error) {
         handleAuthError(error);
@@ -224,7 +271,10 @@ const ShopContextProvider = (props) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post(`${backendUrl}/api/user/login`, { email, password });
+      const response = await axios.post(`${backendUrl}/api/user/login`, {
+        email,
+        password,
+      });
       if (response.data.success) {
         const newToken = response.data.token;
         setToken(newToken);
@@ -241,16 +291,29 @@ const ShopContextProvider = (props) => {
     }
   };
 
-  const logout = () => {
+  const logout = (clearCart = false) => {
     setToken("");
-    setCartItems({});
-    setWishlistItems([]);
     localStorage.removeItem("token");
+    
+    if (clearCart) {
+      setCartItems({});
+      localStorage.removeItem(CART_STORAGE_KEY);
+    }
+    
+    setWishlistItems([]); // Optionally keep wishlist in localStorage
+    localStorage.removeItem(WISHLIST_STORAGE_KEY); // Clear wishlist from localStorage on logout
+    
     navigate("/login");
     toast.info("Logged out successfully");
   };
 
-  const placeOrder = async ({ items, amount, address, email, paymentMethod }) => {
+  const placeOrder = async ({
+    items,
+    amount,
+    address,
+    email,
+    paymentMethod,
+  }) => {
     try {
       if (!token) {
         toast.error("Please login to place an order");
@@ -259,9 +322,10 @@ const ShopContextProvider = (props) => {
       }
 
       const payload = { items, amount, address, email };
-      const endpoint = paymentMethod === "Paystack" 
-        ? "/api/order/paystack" 
-        : "/api/order/place";
+      const endpoint =
+        paymentMethod === "Paystack"
+          ? "/api/order/paystack"
+          : "/api/order/place";
 
       const response = await axios.post(`${backendUrl}${endpoint}`, payload, {
         headers: { Authorization: `Bearer ${token}` },
@@ -269,13 +333,12 @@ const ShopContextProvider = (props) => {
 
       if (response.data.success) {
         if (paymentMethod === "Paystack") {
-          // Redirect to PayStack payment URL
           window.location.href = response.data.authorization_url;
           return { success: true, isRedirect: true };
         } else {
-          // COD order placed
           toast.success("Order placed! Confirmation email sent.");
           setCartItems({});
+          saveCartToStorage({}); // Clear cart in localStorage
           return { success: true, orderId: response.data.orderId };
         }
       } else {
@@ -340,7 +403,9 @@ const ShopContextProvider = (props) => {
     placeOrder,
   };
 
-  return <ShopContext.Provider value={value}>{props.children}</ShopContext.Provider>;
+  return (
+    <ShopContext.Provider value={value}>{props.children}</ShopContext.Provider>
+  );
 };
 
 export default ShopContextProvider;

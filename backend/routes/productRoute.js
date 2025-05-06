@@ -25,6 +25,6 @@ router.post("/remove", adminAuth, removeProduct);
 router.post("/single", singleProduct);
 
 // Get product list (no admin restriction, adjust if needed)
-router.get("/list", listProduct);
+router.post("/list", listProduct);
 
 export default router;

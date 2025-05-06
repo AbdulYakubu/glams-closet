@@ -1,4 +1,3 @@
-
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 
@@ -112,9 +111,25 @@ const generateCartReminderEmailTemplate = ({ name, cartItems }) => {
   `;
 };
 
+// Generate HTML template for password reset email
+const generatePasswordResetEmailTemplate = ({ name, resetUrl }) => {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd;">
+      <h2 style="color: #333;">Password Reset Request</h2>
+      <p style="color: #555;">Hello ${name},</p>
+      <p style="color: #555;">You requested a password reset for your Glam Closet account. Click the button below to reset your password:</p>
+      <p style="text-align: center;">
+        <a href="${resetUrl}" style="display: inline-block; padding: 10px 20px; color: white; background-color: #007bff; text-decoration: none; border-radius: 5px;">Reset Password</a>
+      </p>
+      <p style="color: #555;">This link will expire in 1 hour. If you did not request a password reset, please ignore this email.</p>
+      <p style="color: #555;">Best regards,<br>The Glam Closet Team</p>
+    </div>
+  `;
+};
+
 // Send email with retry logic
 const sendEmail = async ({ to, subject, text, html }, retries = 3) => {
-  // CHANGE: Validate 'to' field to prevent "No recipients defined" error
+  // Validate 'to' field to prevent "No recipients defined" error
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!to || !emailRegex.test(to)) {
     console.error("Invalid or missing recipient email:", to);
@@ -181,4 +196,13 @@ const sendCartReminderEmail = async ({ to, name, cartItems }) => {
   return await sendEmail({ to, subject, text, html });
 };
 
-export { sendOrderConfirmationEmail, sendWelcomeEmail, sendCartReminderEmail };
+// Send password reset email
+const sendPasswordResetEmail = async ({ to, name, resetUrl }) => {
+  const subject = "Password Reset Request";
+  const text = `Hello ${name},\n\nYou requested a password reset. Click the link below to reset your password:\n${resetUrl}\n\nThis link will expire in 1 hour. If you did not request this, please ignore this email.`;
+  const html = generatePasswordResetEmailTemplate({ name, resetUrl });
+
+  return await sendEmail({ to, subject, text, html });
+};
+
+export { sendOrderConfirmationEmail, sendWelcomeEmail, sendCartReminderEmail, sendPasswordResetEmail };

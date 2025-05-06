@@ -27,9 +27,10 @@ const Add = () => {
     "Egypt Abaya",
     "Dubai Abaya",
     "Ready to Wear",
-    "Cuft Packages",
+    "Gift & Packages",
     "Khimars",
     "Veils and Hijab Accessories",
+    "Jalibab"
   ];
 
   const subCategories = {

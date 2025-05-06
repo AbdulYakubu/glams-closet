@@ -18,13 +18,13 @@ const Price = ({ originalPrice, discountedPrice, currency, className = '', size 
   const formattedOriginalPrice = formatPrice(originalPrice);
   const formattedDiscountedPrice = discountedPrice ? formatPrice(discountedPrice) : null;
 
-  console.log("Price rendering:", {
+  {/*console.log("Price rendering:", {
     originalPrice,
     formattedOriginalPrice,
     discountedPrice,
     formattedDiscountedPrice,
     currency,
-  });
+  });*/}
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>

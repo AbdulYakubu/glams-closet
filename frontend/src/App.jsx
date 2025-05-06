@@ -28,6 +28,7 @@ import ResetPassword from './components/ResetPassword'
 import PaystackCallback from './components/PaystackCallback'
 import { ShopContext } from './context/ShopContext';
 import { useContext } from 'react'
+import RequestPasswordReset from './components/RequestPasswordReset'
 
 
 
@@ -39,7 +40,8 @@ const App = () => {
       <Header />
       <Routes>
         <Route path='/' element={<Home />} />
-        <Route path='/reset-password' element={<ResetPassword/>}/>
+        <Route path='/reset-password' element={<ResetPassword />} />
+        <Route path='/request-password' element={<RequestPasswordReset/>}/>
         <Route path='/account' element={<MyAccount />} />
         <Route path='/track-order/:orderId' element={<TrackOrder/>}/>
         <Route path='/cookies' element={<CookiesPage/>}/>

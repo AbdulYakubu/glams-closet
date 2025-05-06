@@ -85,21 +85,21 @@ const RelatedProducts = ({ category, subCategory }) => {
   };
 
   return (
-    <section className="py-12 bg-white dark:bg-gray-900">
-      <div className="max-full mx-auto px-4 sm:px-6">
-        <div className="bg-white dark:bg-gray-800 shadow-md rounded-2xl p-8 border border-gray-100 dark:border-gray-700">
-          <div className="flex justify-between items-center mb-8">
+    <section className="py-8 bg-white dark:bg-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-white dark:bg-gray-800 shadow-md rounded-2xl p-6 sm:p-8 border border-gray-100 dark:border-gray-700">
+          <div className="flex flex-col sm:flex-row justify-between items-center mb-6 sm:mb-8">
             <Title
               title1="Related"
               title2="Products"
-              titleStyles="text-gray-900 dark:text-white"
-              paraStyles="text-gray-600 dark:text-gray-300"
+              titleStyles="text-gray-900 dark:text-white text-2xl sm:text-3xl"
+              paraStyles="text-gray-600 dark:text-gray-300 text-sm sm:text-base"
               subtitle="You might also like these similar items"
             />
             {related.length > 0 && (
               <Link
                 to={`/collections/${category}`}
-                className="text-indigo-600 dark:text-indigo-400 text-sm font-medium hover:underline"
+                className="mt-4 sm:mt-0 text-indigo-600 dark:text-indigo-400 text-sm font-medium hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded"
                 aria-label={`View all products in ${category}`}
               >
                 View All
@@ -118,24 +118,24 @@ const RelatedProducts = ({ category, subCategory }) => {
                 aria-label="Error loading related products"
               >
                 <FiAlertCircle className="text-red-500 dark:text-red-400 text-xl" aria-hidden="true" />
-                <p className="text-red-700 dark:text-red-300">Failed to load related products. Please try again.</p>
+                <p className="text-red-700 dark:text-red-300 text-sm">Failed to load related products. Please try again.</p>
               </motion.div>
             ) : isLoading ? (
               <motion.div
                 variants={container}
                 initial="hidden"
                 animate="show"
-                className="grid grid-cols-2 sm:grid-cols-3 xs:grid-cols-5 gap-6"
+                className="grid grid-cols-1 sm:grid-cols-2 xs:grid-cols-4 gap-4 sm:gap-6"
                 role="region"
                 aria-label="Loading related products"
               >
-                {[...Array(5)].map((_, i) => (
+                {[...Array(4)].map((_, i) => (
                   <motion.div
                     key={`skeleton-${i}`}
                     custom={i}
                     variants={skeletonItem}
                     className="bg-gray-200 dark:bg-gray-700 rounded-xl overflow-hidden"
-                    style={{ height: '300px' }} // Adjust based on Item height
+                    style={{ height: '280px' }}
                     aria-hidden="true"
                   />
                 ))}
@@ -145,7 +145,7 @@ const RelatedProducts = ({ category, subCategory }) => {
                 variants={container}
                 initial="hidden"
                 animate="show"
-                className="grid grid-cols-2 sm:grid-cols-3 xs:grid-cols-5 gap-6"
+                className="grid grid-cols-1 sm:grid-cols-2 xs:grid-cols-4 gap-4 sm:gap-6"
                 role="region"
                 aria-label="Related products"
               >
@@ -154,7 +154,13 @@ const RelatedProducts = ({ category, subCategory }) => {
                     key={product._id}
                     variants={item}
                     whileHover={{ y: -5 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-xl"
                     onClick={() => handleItemClick(product.name)}
+                    tabIndex={0}
+                    onKeyPress={(e) => e.key === 'Enter' && handleItemClick(product.name)}
+                    role="button"
+                    aria-label={`View ${product.name}`}
                   >
                     <Item product={product} />
                   </motion.div>
@@ -168,7 +174,7 @@ const RelatedProducts = ({ category, subCategory }) => {
                 role="alert"
                 aria-label="No related products found"
               >
-                <p className="text-gray-500 dark:text-gray-400 font-medium">No related products found</p>
+                <p className="text-gray-500 dark:text-gray-400 font-medium text-sm sm:text-base">No related products found</p>
                 <p className="text-sm text-gray-400 dark:text-gray-300 mt-2">
                   We couldn't find any products matching your criteria.
                 </p>
