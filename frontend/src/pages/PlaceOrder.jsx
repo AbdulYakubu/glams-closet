@@ -70,7 +70,7 @@ const PlaceOrder = () => {
     localStorage.setItem("checkoutFormData", JSON.stringify(formData));
   }, [formData]);
 
-  // Validate individual field
+    // validateField to require email
   const validateField = (name, value) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const phoneRegex = /^(?:\+233|0)[235]\d{8}$/;
@@ -78,6 +78,7 @@ const PlaceOrder = () => {
 
     if (name === "firstName" && !value.trim()) errors.firstName = "First name is required";
     if (name === "lastName" && !value.trim()) errors.lastName = "Last name is required";
+    if (name === "email" && !value.trim()) errors.email = "Email is required";
     if (name === "email" && value && !emailRegex.test(value)) errors.email = "Valid email is required";
     if (name === "phone" && !phoneRegex.test(value))
       errors.phone = "Valid Ghanaian phone number required (e.g., 0542271847)";
@@ -88,7 +89,7 @@ const PlaceOrder = () => {
   };
 
   // Validate entire form
-  const validateForm = useCallback(() => {
+ const validateForm = useCallback(() => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const phoneRegex = /^(?:\+233|0)[235]\d{8}$/;
 
@@ -96,6 +97,7 @@ const PlaceOrder = () => {
 
     if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
     if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
+    if (!formData.email.trim()) newErrors.email = "Email is required";
     if (formData.email && !emailRegex.test(formData.email)) newErrors.email = "Valid email is required";
     if (!phoneRegex.test(formData.phone))
       newErrors.phone = "Valid Ghanaian phone number required (e.g., 0542271847)";
@@ -105,7 +107,7 @@ const PlaceOrder = () => {
     setErrors(newErrors);
     const valid = Object.keys(newErrors).length === 0;
     setIsFormValid(valid);
-    {/*console.log("Form validation:", { isValid: valid, errors: newErrors });*/ }
+    // console.log("Form validation:", { isValid: valid, errors: newErrors });
     return valid;
   }, [formData]);
 
@@ -187,8 +189,8 @@ const PlaceOrder = () => {
         return;
       }
 
-      const payload = {
-        email: formData.email || "zinab@gmail.com",
+     const payload = {
+        email: formData.email,
         address: formData,
         items,
         amount,
@@ -316,7 +318,7 @@ const PlaceOrder = () => {
     <div className="min-h-screen flex flex-col bg-primary dark:bg-gray-900">
       <div className="flex-grow mb-16">
         <form onSubmit={handleSubmit} className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-          <div className="flex flex-col lg:flex-row gap-8">
+          <div className="flex flex-col xs:flex-row gap-8">
             {/* Delivery Information */}
             <div className="flex-1">
               <Title title1={"Delivery"} title2={"Information"} />
@@ -386,7 +388,7 @@ const PlaceOrder = () => {
                       htmlFor="email"
                       className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300"
                     >
-                      Email
+                      Email*
                     </label>
                     <div className="relative">
                       <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -399,6 +401,7 @@ const PlaceOrder = () => {
                         className="w-full pl-10 px-4 py-3 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 dark:focus:ring-indigo-500"
                         aria-invalid={!!errors.email}
                         aria-describedby="email-error"
+                        required
                       />
                     </div>
                     {errors.email && (
@@ -449,17 +452,15 @@ const PlaceOrder = () => {
                     >
                       Street Address
                     </label>
-                    <div className="relative">
-                      <FaHome className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      <input
-                        id="street"
-                        type="text"
-                        onChange={onChangeHandler}
-                        value={formData.street}
-                        name="street"
-                        className="w-full pl-10 px-4 py-3 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 dark:focus:ring-indigo-500"
-                      />
-                    </div>
+                    <div className="relative">          
+                     <input
+                      id="street"
+                      type="text"
+                      onChange={onChangeHandler}
+                      value={formData.street}
+                      name="street"
+                      className="w-full pl-10 px-4 py-3 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 dark:focus:ring-indigo-500"
+                    />
                   </div>
                   <div>
                     <label
@@ -691,8 +692,9 @@ const PlaceOrder = () => {
                     </>
                   )}
                 </motion.button>
+                </div>
+                </div>
               </div>
-            </div>
           </div>
         </form>
       </div>

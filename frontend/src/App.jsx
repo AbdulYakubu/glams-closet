@@ -25,10 +25,14 @@ import CookiesPage from './components/CookiesPage'
 import MyAccount from './pages/MyAccount'
 import TrackOrder from './components/TrackOrder'
 import ResetPassword from './components/ResetPassword'
+import PaystackCallback from './components/PaystackCallback'
+import { ShopContext } from './context/ShopContext';
+import { useContext } from 'react'
 
 
 
 const App = () => {
+  const { backendUrl, token } = useContext(ShopContext);
   return (
     <main className='overflow-hidden text-[#404040]'>
       <ToastContainer/>
@@ -41,7 +45,11 @@ const App = () => {
         <Route path='/cookies' element={<CookiesPage/>}/>
         <Route path='/terms' element={<TermsPage />} />
         <Route path='/privacy' element={<PrivacyPage/>}/>
-        <Route path='/Payment' element={<PaymentMethodsPage/>}/>
+        <Route path='/Payment' element={<PaymentMethodsPage />} />
+         <Route
+            path="/paystack/callback"
+            element={<PaystackCallback backendUrl={backendUrl} token={token} />}
+          />
         <Route path='/blog' element={<BlogPage/>}/>
         <Route path='/returns' element={<Returns/> } />
         <Route path='/help' element={< HelpCenter/> } />

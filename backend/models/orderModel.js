@@ -1,3 +1,4 @@
+
 import mongoose from "mongoose";
 
 const orderSchema = new mongoose.Schema({
@@ -6,10 +7,16 @@ const orderSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
+  // Added email field to store the customer's email for order confirmation
+  email: {
+    type: String,
+    required: false, // Optional to handle existing orders without email
+    trim: true,
+  },
   items: [
     {
       productId: {
-        type: mongoose.Schema.Types.ObjectId, // Changed from String to ObjectId
+        type: mongoose.Schema.Types.ObjectId,
         ref: "Product",
         required: true,
       },

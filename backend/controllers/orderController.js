@@ -160,6 +160,7 @@ const placeOrderPayStack = async (req, res) => {
   console.log("Paystack Request:", { userId, body: JSON.stringify(req.body, null, 2) });
 
   try {
+    // CHANGE: Validate userId
     if (!userId) {
       console.error("No userId provided");
       return res.status(401).json({ success: false, message: "User not authenticated" });
@@ -170,42 +171,31 @@ const placeOrderPayStack = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid user ID format" });
     }
 
-    if (!email || !amount || !items || !items.length || !address) {
+    // CHANGE: Validate email with regex to ensure it's valid
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      console.error("Invalid or missing email:", email);
+      return res.status(400).json({ success: false, message: "Valid email is required" });
+    }
+
+    // Validate required fields
+    if (!amount || !items || !items.length || !address) {
       console.error("Missing fields:", { email, amount, items, address });
       return res.status(400).json({ success: false, message: "Missing required fields" });
     }
 
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
+    // Validate items
+    for (const item of items) {
       if (!item._id || !item.name || !item.quantity || !item.price) {
-        console.error(`Invalid item at index ${i}:`, item);
-        return res.status(400).json({
-          success: false,
-          message: `Item at index ${i} missing required fields (_id, name, quantity, price)`,
-        });
-      }
-      if (typeof item.quantity !== "number" || item.quantity <= 0) {
-        console.error(`Invalid quantity for item at index ${i}:`, item.quantity);
-        return res.status(400).json({
-          success: false,
-          message: `Item at index ${i} has invalid quantity`,
-        });
-      }
-      if (typeof item.price !== "number" || item.price <= 0) {
-        console.error(`Invalid price for item at index ${i}:`, item.price);
-        return res.status(400).json({
-          success: false,
-          message: `Item at index ${i} has invalid price`,
-        });
+        console.error("Invalid item format:", item);
+        return res.status(400).json({ success: false, message: "Invalid item format" });
       }
     }
 
-    const requiredAddressFields = ["firstName", "lastName", "city", "country", "phone"];
-    for (const field of requiredAddressFields) {
-      if (!address[field]) {
-        console.error("Missing address field:", field);
-        return res.status(400).json({ success: false, message: `Address ${field} is required` });
-      }
+    // Validate address
+    if (!address.firstName || !address.lastName || !address.city || !address.country || !address.phone) {
+      console.error("Invalid address format:", address);
+      return res.status(400).json({ success: false, message: "Invalid address format" });
     }
 
     const user = await userModel.findById(userId);
@@ -214,8 +204,10 @@ const placeOrderPayStack = async (req, res) => {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
+    // CHANGE: Include email in orderData
     const orderData = {
       userId: new mongoose.Types.ObjectId(userId),
+      email, // Store email in order document
       items: items.map((item) => ({
         productId: item._id,
         name: item.name,
@@ -247,62 +239,35 @@ const placeOrderPayStack = async (req, res) => {
     const savedOrder = await newOrder.save();
     console.log("Paystack Order saved successfully:", savedOrder._id);
 
-    // Verify order in database
-    const verifiedOrder = await orderModel.findById(savedOrder._id);
-    if (!verifiedOrder) {
-      console.error("Order not found after save:", savedOrder._id);
-      return res.status(500).json({ success: false, message: "Order save verification failed" });
-    }
-    console.log("Order verified in database:", verifiedOrder._id);
-
-    const amountInKobo = Math.round(amount * 100);
-    if (isNaN(amountInKobo) || amountInKobo < 100) {
-      console.error("Invalid amount:", amountInKobo);
-      return res.status(400).json({ success: false, message: "Invalid amount (must be >= 100 kobo)" });
-    }
-
-    console.log("Initializing Paystack transaction");
-    const response = await axios.post(
+    // Initialize Paystack transaction
+    const paystackResponse = await axios.post(
       "https://api.paystack.co/transaction/initialize",
       {
         email,
-        amount: amountInKobo,
-        reference: `order_${savedOrder._id}`,
-        metadata: {
-          order_id: savedOrder._id.toString(),
-          user_id: userId,
-        },
-        callback_url: process.env.PAYSTACK_CALLBACK_URL || "http://localhost:4000/api/order/paystack/callback",
+        amount: amount * 100, // Convert to kobo
+        currency: "GHS",
+        callback_url: `${process.env.FRONTEND_URL}/paystack/callback`,
+        metadata: { order_id: savedOrder._id.toString() },
       },
       {
         headers: {
           Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
           "Content-Type": "application/json",
         },
-        timeout: 15000,
       }
     );
 
-    console.log("Paystack Response:", response.data);
-
-    if (!response.data?.status || !response.data?.data?.authorization_url) {
-      console.error("Invalid Paystack response:", response.data);
-      return res.status(500).json({ success: false, message: "Invalid response from Paystack" });
+    if (!paystackResponse.data.status) {
+      console.error("Paystack initialization failed:", paystackResponse.data);
+      await orderModel.findByIdAndDelete(savedOrder._id);
+      return res.status(400).json({ success: false, message: "Payment initialization failed" });
     }
 
-    console.log("Clearing user cart for user:", userId);
-    const updatedUser = await userModel.findByIdAndUpdate(userId, { cartData: {} }, { new: true });
-    if (!updatedUser) {
-      console.warn("Failed to clear cart for user:", userId);
-    } else {
-      console.log("User cart cleared successfully");
-    }
-
+    console.log("Paystack transaction initialized:", paystackResponse.data.data.reference);
     res.json({
       success: true,
-      authorization_url: response.data.data.authorization_url,
-      reference: response.data.data.reference,
-      orderId: savedOrder._id,
+      authorization_url: paystackResponse.data.data.authorization_url,
+      reference: paystackResponse.data.data.reference,
     });
   } catch (error) {
     console.error("Paystack Error:", {
@@ -319,6 +284,7 @@ const placeOrderPayStack = async (req, res) => {
   }
 };
 
+// Paystack callback handler
 const paystackCallback = async (req, res) => {
   console.log("Starting paystackCallback");
   const { reference } = req.query;
@@ -367,31 +333,40 @@ const paystackCallback = async (req, res) => {
       return res.status(404).json({ success: false, message: "Order not found" });
     }
 
-    await sendOrderConfirmationEmail({
-      to: order.email,
-      orderId: order._id,
-      items: order.items,
-      amount: order.amount,
-      address: order.address,
-      paymentMethod: order.paymentMethod,
-    });
-
-    console.log("Clearing user cart for user:", order.userId);
-    const updatedUser = await userModel.findByIdAndUpdate(order.userId, { cartData: {} }, { new: true });
-    if (!updatedUser) {
-      console.warn("Failed to clear cart for user:", order.userId);
-    } else {
-      console.log("User cart cleared successfully");
+    if (order.email) {
+      try {
+        await sendOrderConfirmationEmail({
+          to: order.email,
+          orderId: order._id,
+          items: order.items,
+          amount: order.amount,
+          address: order.address,
+          paymentMethod: order.paymentMethod,
+        });
+        console.log("Order confirmation email sent to:", order.email);
+      } catch (emailError) {
+        console.error("Failed to send order confirmation email:", emailError);
+      }
     }
 
-    res.redirect(`${process.env.FRONTEND_URL}/orders?orderId=${orderId}`);
-  } catch (error) {
-    console.error("Callback Error:", {
-      message: error.message,
-      stack: error.stack,
-      response: error.response?.data,
+    console.log("Clearing user cart for user:", order.userId);
+    await userModel.findByIdAndUpdate(order.userId, { cartData: {} }, { new: true });
+
+    // CHANGE: Return JSON instead of redirecting
+    return res.json({ 
+      success: true, 
+      orderId,
+      message: "Payment verified successfully",
+      redirectUrl: `${process.env.FRONTEND_URL}/orders`
     });
-    res.status(500).json({ success: false, message: "Callback processing failed" });
+    
+  } catch (error) {
+    console.error("Callback Error:", error);
+    return res.status(500).json({ 
+      success: false, 
+      message: "Callback processing failed",
+      error: error.message
+    });
   }
 };
 
