@@ -10,9 +10,9 @@ const List = ({ token }) => {
 
   const fetchList = async () => {
     try {
-      console.log("Fetching Products - URL:", "/api/product/list");
+      {/*console.log("Fetching Products - URL:", "/api/product/list");*/ }
       const response = await axiosInstance.post("/api/product/list");
-      console.log("Products Response:", response.data);
+      {/*console.log("Products Response:", response.data);*/ }
 
       if (response.data.success) {
         setList(response.data.products);
@@ -29,12 +29,12 @@ const List = ({ token }) => {
 
   const removeProduct = async (id) => {
     try {
-      console.log("Removing Product - URL:", "/api/product/remove");
-      console.log("Removing Product - ID:", id);
+      {/*console.log("Removing Product - URL:", "/api/product/remove");*/ }
+      {/*console.log("Removing Product - ID:", id);*/ }
 
       const response = await axiosInstance.post("/api/product/remove", { id });
 
-      console.log("Remove Response:", response.data);
+      {/*console.log("Remove Response:", response.data);*/ }
 
       if (response.data.success) {
         toast.success(response.data.message || "Product removed");

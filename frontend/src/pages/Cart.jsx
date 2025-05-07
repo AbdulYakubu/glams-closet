@@ -49,7 +49,7 @@ const Cart = () => {
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === "cart_items") {
-        console.log("Cart in localStorage updated:", e.newValue);
+        {/*console.log("Cart in localStorage updated:", e.newValue);*/ }
       }
     };
     window.addEventListener("storage", handleStorageChange);

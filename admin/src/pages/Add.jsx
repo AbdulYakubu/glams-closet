@@ -12,8 +12,8 @@ const Add = () => {
     name: "",
     description: "",
     price: "",
-    category: "Bags",
-    subCategory: "Handbags",
+    category: "Abaaya",
+    subCategory: "Traditional",
     popular: false,
     newArrival: false,
     sizes: [],
@@ -21,38 +21,32 @@ const Add = () => {
   const [loading, setLoading] = useState(false);
 
   // Available options
-  const categories = [
+   const categories = [
+    "Abaaya",
+    "Hijab & Khimar",
+    "Kids",
+    "Perfumes and Self Care",
     "Bags",
-    "Perfumes and Self Care Products",
-    "Egypt Abaya",
-    "Dubai Abaya",
+    "Jalibab",
     "Ready to Wear",
-    "Gift & Packages",
-    "Khimars",
-    "Veils and Hijab Accessories",
-    "Jalibab"
+    "Gift Packages",
+    "Veils",
+    "Hijab Accessories"
   ];
 
   const subCategories = {
-    Bags: ["Handbags", "Tote Bags", "Clutches", "Backpacks", "Travel Bags"],
-    "Perfumes and Self Care Products": [
-      "Women's Perfumes",
-      "Men's Perfumes",
-      "Luxury Fragrances",
-      "Body Care",
-      "Hair Care",
-    ],
-    "Egypt Abaya": ["Traditional", "Modern", "Embroidered"],
-    "Dubai Abaya": ["Luxury", "Designer", "Open Style"],
+    "Abaaya": ["Traditional", "Modern", "Embroidered", "Luxury", "Designer"],
+    "Hijab & Khimar": ["Cotton", "Chiffon", "Silk", "Jersey", "Printed"],
+    "Kids": ["Boys", "Girls", "Infants"],
+    "Perfumes and Self Care": ["Women's Perfumes", "Men's Perfumes", "Body Care", "Hair Care"],
+    "Bags": ["Handbags", "Tote Bags", "Clutches", "Backpacks", "Travel Bags"],
+    "Jalibab": ["Plain", "Embroidered", "Designer"],
     "Ready to Wear": ["Casual", "Formal", "Party Wear"],
-    "Cuft Packages": ["Premium", "Deluxe", "Standard"],
-    Khimars: ["Traditional", "Modern", "Embroidered"],
-    "Veils and Hijab Accessories": [
-      "Hijabs",
-      "Under Scarves",
-      "Pins and Accessories",
-    ],
+    "Gift Packages": ["Premium", "Deluxe", "Standard"],
+    "Veils": ["Plain", "Embroidered", "Lace"],
+    "Hijab Accessories": ["Pins", "Under Scarves", "Caps"]
   };
+
 
   const sizeOptions = ["S", "M", "L", "XL", "XXL"];
 
@@ -227,7 +221,7 @@ const Add = () => {
               </select>
             </div>
 
-            {/* Subcategory */}
+            {/* Subcategory - Updated to match frontend */}
             <div>
               <label
                 htmlFor="subCategory"
@@ -250,7 +244,6 @@ const Add = () => {
                 ))}
               </select>
             </div>
-
             {/* Price */}
             <div>
               <label

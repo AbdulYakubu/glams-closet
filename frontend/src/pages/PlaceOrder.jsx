@@ -81,7 +81,7 @@ const PlaceOrder = () => {
     if (name === "email" && !value.trim()) errors.email = "Email is required";
     if (name === "email" && value && !emailRegex.test(value)) errors.email = "Valid email is required";
     if (name === "phone" && !phoneRegex.test(value))
-      errors.phone = "Valid Ghanaian phone number required (e.g., 0542271847)";
+      errors.phone = "Valid Ghanaian phone number required (e.g., 0541234567)";
     if (name === "city" && !value.trim()) errors.city = "City is required";
     if (name === "country" && !value.trim()) errors.country = "Country is required";
 
@@ -100,7 +100,7 @@ const PlaceOrder = () => {
     if (!formData.email.trim()) newErrors.email = "Email is required";
     if (formData.email && !emailRegex.test(formData.email)) newErrors.email = "Valid email is required";
     if (!phoneRegex.test(formData.phone))
-      newErrors.phone = "Valid Ghanaian phone number required (e.g., 0542271847)";
+      newErrors.phone = "Valid Ghanaian phone number required (e.g., 0541234567)";
     if (!formData.city.trim()) newErrors.city = "City is required";
     if (!formData.country.trim()) newErrors.country = "Country is required";
 
@@ -164,7 +164,7 @@ const PlaceOrder = () => {
         {/*console.error("No valid items in cart");*/ }
         toast.error("No valid items in cart");
       } else {
-        toast.error("Prepared order items:", JSON.stringify(orderItems, null, 2));
+        //toast.error("Prepared order items:", JSON.stringify(orderItems, null, 2));
       }
       return orderItems;
     };
@@ -256,7 +256,7 @@ const PlaceOrder = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted, validating...");
+    //console.log("Form submitted, validating...");
     if (!validateForm()) {
       console.error("Form validation failed", errors);
       toast.error("Please correct the form errors");

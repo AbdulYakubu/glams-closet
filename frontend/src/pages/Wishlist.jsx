@@ -17,7 +17,7 @@ const Wishlist = () => {
 
   // Debug re-renders
   useEffect(() => {
-    console.log("Wishlist re-rendered");
+    {/*console.log("Wishlist re-rendered");*/ }
   });
 
   // Animation variants

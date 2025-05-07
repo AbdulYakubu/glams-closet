@@ -91,7 +91,7 @@ const Footer = () => {
                   className="text-gray-400 dark:text-gray-400 hover:text-indigo-400 dark:hover:text-indigo-400 transition-colors"
                   aria-label="Call GlamsCloset at +233 542 271 847"
                 >
-                  +233 542 271 847
+                  +233 552 418 606
                 </a>
               </div>
             </div>
@@ -103,11 +103,11 @@ const Footer = () => {
               <div>
                 <h4 className="font-medium mb-1 text-gray-50 dark:text-white">Email</h4>
                 <a 
-                  href="mailto:yakubuabdulaziz641@gmail.com" 
+                  href="mailto:abdullairamatu984@gmail.com" 
                   className="text-gray-400 dark:text-gray-400 hover:text-indigo-400 dark:hover:text-indigo-400 transition-colors"
                   aria-label="Email GlamsCloset"
                 >
-                  yakubuabdulaziz641@gmail.com
+                  abdullairamatu984@gmail.com
                 </a>
               </div>
             </div>
@@ -130,7 +130,7 @@ const Footer = () => {
             />
             */}
             <h2 className="text-3xl font-serif font-medium mb-4 text-gray-50 dark:text-white">
-              Glams<span className="text-secondary dark:text-indigo-400">Closet</span>
+              Glam<span className="text-secondary dark:text-indigo-400">Closet</span>
             </h2>
             <p className="text-gray-400 dark:text-gray-400 mb-6">Elevating your style with carefully curated fashion pieces for every occasion.</p>
             
@@ -195,7 +195,7 @@ const Footer = () => {
       {/* Bottom Section - Copyright */}
       <div className="bg-gray-800 dark:bg-gray-800 py-6">
         <div className="container mx-auto px-4 sm:px-6 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-gray-400 dark:text-gray-400 text-sm">© 2025 GlamsCloset. All rights reserved.</p>
+          <p className="text-gray-400 dark:text-gray-400 text-sm">© 2025 GlamCloset. All rights reserved.</p>
           <div className="flex gap-4 mt-4 md:mt-0">
             {navLinks.policies.map(({ name, path, label }) => (
               <Link 

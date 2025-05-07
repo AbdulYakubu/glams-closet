@@ -12,9 +12,9 @@ const Orders = ({ token }) => {
     if (!token) return;
 
     try {
-      console.log("Fetching Orders - URL:", "/api/order/list");
+      {/*console.log("Fetching Orders - URL:", "/api/order/list");*/ }
       const response = await axiosInstance.get("/api/order/all");
-      console.log("Orders Response:", response.data);
+      {/*console.log("Orders Response:", response.data);*/ }
 
       if (response.data.success) {
         setOrders(response.data.orders.reverse());
@@ -32,9 +32,9 @@ const Orders = ({ token }) => {
   const statusHandler = async (e, orderId) => {
     const status = e.target.value;
     try {
-      console.log("Updating Status - Order ID:", orderId, "Status:", status);
+      {/*console.log("Updating Status - Order ID:", orderId, "Status:", status);*/ }
       const response = await axiosInstance.post("/api/order/status", { orderId, status });
-      console.log("Status Update Response:", response.data);
+      {/*console.log("Status Update Response:", response.data);*/ }
 
       if (response.data.success) {
         toast.success("Order status updated");

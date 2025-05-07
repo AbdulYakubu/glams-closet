@@ -41,7 +41,7 @@ import { useState, useEffect, useContext } from "react";
 
        setLoading(true);
        try {
-         console.log("Fetching profile with token:", token); // Debug
+         {/*console.log("Fetching profile with token:", token); // Debug*/}
          const response = await axios.get(`${backendUrl}/api/user/profile`, {
            headers: { Authorization: `Bearer ${token}` },
          });
@@ -56,7 +56,7 @@ import { useState, useEffect, useContext } from "react";
              digitalAddress: "",
              country: "Ghana",
            });
-           console.log("Profile fetched:", response.data.user); // Debug
+           {/*console.log("Profile fetched:", response.data.user);*/ }
          } else {
            toast.error(response.data.message || "Failed to fetch profile");
          }
@@ -105,7 +105,7 @@ import { useState, useEffect, useContext } from "react";
 
        setLoading(true);
        try {
-         console.log("Updating profile with token:", token); // Debug
+         {/*console.log("Updating profile with token:", token); */ }
          const response = await axios.put(
            `${backendUrl}/api/user/profile`,
            { ...profileData, address: addressData },

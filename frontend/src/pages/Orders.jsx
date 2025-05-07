@@ -308,7 +308,7 @@ const Orders = () => {
         ) : (
           <AnimatePresence>
             {filteredData.map((item, index) => {
-              console.log("Frontend: Rendering item:", item);
+              //console.log("Frontend: Rendering item:", item);
               return (
                 <motion.div
                   key={`${item.orderId}-${item._id}-${index}`}
