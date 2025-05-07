@@ -3,46 +3,73 @@ import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
 import productModel from "../models/productModel.js";
 import axios from "axios";
-import { sendOrderConfirmationEmail }  from "../utils/emailService.js";
-import dotenv from "dotenv"
-//const { sendOrderConfirmationEmail } = require("../services/emailService");
+import { sendOrderConfirmationEmail } from "../utils/emailService.js";
+import dotenv from "dotenv";
 
-//require("dotenv").config();
+dotenv.config();
 
 const placeOrder = async (req, res) => {
-  console.log("Starting placeOrder (COD)");
-  const { items, amount, address, email } = req.body;
+  console.log("Starting placeOrder");
+  const { items, amount, address, email, paymentMethod, pickupLocation } = req.body;
   const userId = req.userId;
 
-  console.log("COD Request:", { userId, body: JSON.stringify(req.body, null, 2) });
+  console.log("Place Order Request:", {
+    userId,
+    paymentMethod,
+    body: JSON.stringify(req.body, null, 2),
+  });
 
   try {
     if (!userId) {
-      console.error("No userId provided");
-      return res.status(401).json({ success: false, message: "User not authenticated" });
+      console.error("User ID is required");
+      return res.status(401).json({ success: false, message: "User ID is required" });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      console.error("Invalid userId format:", userId);
-      return res.status(400).json({ success: false, message: "Invalid user ID format" });
+    if (!["COD", "Pickup"].includes(paymentMethod)) {
+      console.error("Invalid paymentMethod:", paymentMethod);
+      return res.status(400).json({
+        success: false,
+        message: "Invalid payment method. Must be 'COD' or 'Pickup'",
+      });
     }
 
     if (!items || !Array.isArray(items) || items.length === 0) {
-      console.error("Invalid items:", items);
-      return res.status(400).json({ success: false, message: "Items are required and must be a non-empty array" });
+      console.error("Items validation failed:", items);
+      return res.status(400).json({
+        success: false,
+        message: "Items are required and must be a non-empty array",
+      });
     }
 
+    // Validate items
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      console.error("Invalid items:", items);
+      return res.status(400).json({
+        success: false,
+        message: "Items are required and must be a non-empty array",
+      });
+    }
+
+    // Validate amount
     if (!amount || typeof amount !== "number" || amount <= 0) {
       console.error("Invalid amount:", amount);
       return res.status(400).json({ success: false, message: "Valid amount is required" });
     }
 
+    // Validate address
     if (!address || typeof address !== "object") {
       console.error("Invalid address:", address);
       return res.status(400).json({ success: false, message: "Address is required" });
     }
 
-    // Validate items
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      console.error("Invalid or missing email:", email);
+      return res.status(400).json({ success: false, message: "Valid email is required" });
+    }
+
+    // Validate item fields
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       if (!item._id || !item.name || !item.quantity || !item.price) {
@@ -68,23 +95,29 @@ const placeOrder = async (req, res) => {
       }
     }
 
-    // Validate address
+    // Validate address fields
     const requiredAddressFields = ["firstName", "lastName", "city", "country", "phone"];
     for (const field of requiredAddressFields) {
       if (!address[field]) {
         console.error("Missing address field:", field);
-        return res.status(400).json({ success: false, message: `Address ${field} is required` });
+        return res.status(400).json({
+          success: false,
+          message: `Address ${field} is required`,
+        });
       }
     }
 
+    // Verify user existence
     const user = await userModel.findById(userId);
     if (!user) {
       console.error("User not found:", userId);
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
+    // Prepare order data
     const orderData = {
       userId: new mongoose.Types.ObjectId(userId),
+      email,
       items: items.map((item) => ({
         productId: item._id,
         name: item.name,
@@ -104,54 +137,73 @@ const placeOrder = async (req, res) => {
         digitalAddress: address.digitalAddress || "",
         phone: address.phone,
       },
-      paymentMethod: "COD",
+      paymentMethod,
       payment: false,
       paymentStatus: "pending",
-      status: "Packing",
+      status: paymentMethod === "Pickup" ? "Ready for Pickup" : "Packing",
       date: new Date(),
     };
 
-    console.log("Attempting to save COD order:", JSON.stringify(orderData, null, 2));
+    console.log(`Attempting to save ${paymentMethod} order:`, JSON.stringify(orderData, null, 2));
     const newOrder = new orderModel(orderData);
     const savedOrder = await newOrder.save();
-    console.log("COD Order saved successfully:", savedOrder._id);
+    console.log(`${paymentMethod} Order saved successfully:`, savedOrder._id);
 
     // Verify order in database
     const verifiedOrder = await orderModel.findById(savedOrder._id);
     if (!verifiedOrder) {
       console.error("Order not found after save:", savedOrder._id);
-      return res.status(500).json({ success: false, message: "Order save verification failed" });
+      return res.status(500).json({
+        success: false,
+        message: "Order save verification failed",
+      });
     }
     console.log("Order verified in database:", verifiedOrder._id);
 
+    // Clear user cart
     console.log("Clearing user cart for user:", userId);
-    const updatedUser = await userModel.findByIdAndUpdate(userId, { cartData: {} }, { new: true });
+    const updatedUser = await userModel.findByIdAndUpdate(
+      userId,
+      { cartData: {} },
+      { new: true }
+    );
     if (!updatedUser) {
       console.warn("Failed to clear cart for user:", userId);
     } else {
       console.log("User cart cleared successfully");
     }
 
-    await sendOrderConfirmationEmail({
-      to: email,
-      orderId: savedOrder._id,
-      items: savedOrder.items,
-      amount: savedOrder.amount,
-      address: savedOrder.address,
-      paymentMethod: savedOrder.paymentMethod,
-    });
+    // Send order confirmation email
+    try {
+      await sendOrderConfirmationEmail({
+        to: email,
+        orderId: savedOrder._id,
+        items: savedOrder.items,
+        amount: savedOrder.amount,
+        address: savedOrder.address,
+        paymentMethod: savedOrder.paymentMethod,
+      });
+      console.log("Order confirmation email sent to:", email);
+    } catch (emailError) {
+      console.error("Failed to send order confirmation email:", emailError);
+    }
 
     res.status(201).json({ success: true, orderId: savedOrder._id });
   } catch (error) {
-    console.error("COD Error:", {
+    console.error(`${paymentMethod || "Place Order"} Error:`, {
       message: error.message,
       stack: error.stack,
       body: JSON.stringify(req.body, null, 2),
+    zoology: true,
     });
-    res.status(500).json({ success: false, message: error.message || "Failed to place COD order" });
+    res.status(500).json({
+      success: false,
+      message: error.message || `Failed to place ${paymentMethod || "order"}`,
+    });
   }
 };
 
+// The rest of the file remains unchanged
 const placeOrderPayStack = async (req, res) => {
   console.log("Starting placeOrderPayStack");
   const { email, amount, items, address } = req.body;
@@ -160,7 +212,7 @@ const placeOrderPayStack = async (req, res) => {
   console.log("Paystack Request:", { userId, body: JSON.stringify(req.body, null, 2) });
 
   try {
-    // CHANGE: Validate userId
+    // Validate userId
     if (!userId) {
       console.error("No userId provided");
       return res.status(401).json({ success: false, message: "User not authenticated" });
@@ -171,7 +223,7 @@ const placeOrderPayStack = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid user ID format" });
     }
 
-    // CHANGE: Validate email with regex to ensure it's valid
+    // Validate email with regex to ensure it's valid
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || !emailRegex.test(email)) {
       console.error("Invalid or missing email:", email);
@@ -204,10 +256,9 @@ const placeOrderPayStack = async (req, res) => {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // CHANGE: Include email in orderData
     const orderData = {
       userId: new mongoose.Types.ObjectId(userId),
-      email, // Store email in order document
+      email,
       items: items.map((item) => ({
         productId: item._id,
         name: item.name,
@@ -352,20 +403,18 @@ const paystackCallback = async (req, res) => {
     console.log("Clearing user cart for user:", order.userId);
     await userModel.findByIdAndUpdate(order.userId, { cartData: {} }, { new: true });
 
-    // CHANGE: Return JSON instead of redirecting
-    return res.json({ 
-      success: true, 
+    return res.json({
+      success: true,
       orderId,
       message: "Payment verified successfully",
-      redirectUrl: `${process.env.FRONTEND_URL}/orders`
+      redirectUrl: `${process.env.FRONTEND_URL}/orders`,
     });
-    
   } catch (error) {
     console.error("Callback Error:", error);
-    return res.status(500).json({ 
-      success: false, 
+    return res.status(500).json({
+      success: false,
       message: "Callback processing failed",
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -463,7 +512,7 @@ const updateStatus = async (req, res) => {
   try {
     const { orderId, status } = req.body;
     console.log("Updating status for order:", orderId, "to:", status);
-    if (!["Packing", "Shipped", "Out for Delivery", "Delivered"].includes(status)) {
+    if (!["Packing", "Shipped", "Out for Delivery", "Delivered", "Ready for Pickup", "Cancelled"].includes(status)) {
       console.error("Invalid status:", status);
       return res.status(400).json({ success: false, message: "Invalid status" });
     }

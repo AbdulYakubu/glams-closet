@@ -28,7 +28,7 @@ const createTransporter = () => {
 };
 
 // Generate HTML template for order confirmation email
-const generateOrderEmailTemplate = ({ orderId, items, amount, address, paymentMethod }) => {
+const generateOrderEmailTemplate = ({ orderId, items, amount, address, paymentMethod, pickupLocation }) => {
   const itemRows = items
     .map(
       (item) => `
@@ -41,6 +41,32 @@ const generateOrderEmailTemplate = ({ orderId, items, amount, address, paymentMe
       `
     )
     .join("");
+
+  // Determine address or pickup section based on paymentMethod
+  const isPickup = paymentMethod === "Pickup";
+  const addressSection = isPickup
+    ? `
+      <h3 style="color: #333;">Pickup Details</h3>
+      <p style="color: #555;">
+        <strong>Location:</strong> ${pickupLocation?.name || "Chief Butcher"}<br />
+        <strong>Hours:</strong> ${pickupLocation?.hours || "Mon-Fri 9am-6pm, Sat 10am-4pm"}<br />
+        <strong>Contact:</strong> ${address.firstName} ${address.lastName}<br />
+        Phone: ${address.phone}
+      </p>
+      <p style="color: #555;">
+        Please bring a valid ID and your order number when picking up your order.
+      </p>
+    `
+    : `
+      <h3 style="color: #333;">Shipping Address</h3>
+      <p style="color: #555;">
+        ${address.firstName} ${address.lastName}<br />
+        ${address.street ? address.street + "<br />" : ""}
+        ${address.city}, ${address.state ? address.state + "," : ""} ${address.country}<br />
+        ${address.digitalAddress ? "Digital Address: " + address.digitalAddress + "<br />" : ""}
+        Phone: ${address.phone}
+      </p>
+    `;
 
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd;">
@@ -62,15 +88,13 @@ const generateOrderEmailTemplate = ({ orderId, items, amount, address, paymentMe
       </table>
       <p style="color: #555;"><strong>Total Amount:</strong> GHS ${amount.toFixed(2)}</p>
       <p style="color: #555;"><strong>Payment Method:</strong> ${paymentMethod}</p>
-      <h3 style="color: #333;">Shipping Address</h3>
+      ${addressSection}
       <p style="color: #555;">
-        ${address.firstName} ${address.lastName}<br />
-        ${address.street ? address.street + "<br />" : ""}
-        ${address.city}, ${address.state ? address.state + "," : ""} ${address.country}<br />
-        ${address.digitalAddress ? "Digital Address: " + address.digitalAddress + "<br />" : ""}
-        Phone: ${address.phone}
+        ${isPickup
+          ? "We'll notify you when your order is ready for pickup."
+          : "We'll notify you when your order ships."}
+        Thank you for shopping with Glam Closet!
       </p>
-      <p style="color: #555;">We'll notify you when your order ships. Thank you for shopping with Glam Closet!</p>
       <p style="color: #555; text-align: center;">
         <a href="${process.env.FRONTEND_URL}/orders" style="color: #007bff; text-decoration: none;">View Order Details</a>
       </p>
@@ -170,10 +194,10 @@ const sendEmail = async ({ to, subject, text, html }, retries = 3) => {
 };
 
 // Send order confirmation email
-const sendOrderConfirmationEmail = async ({ to, orderId, items, amount, address, paymentMethod }) => {
+const sendOrderConfirmationEmail = async ({ to, orderId, items, amount, address, paymentMethod, pickupLocation }) => {
   const subject = `Order Confirmation - #${orderId}`;
   const text = `Your order #${orderId} has been placed successfully. Total: GHS ${amount.toFixed(2)}.`;
-  const html = generateOrderEmailTemplate({ orderId, items, amount, address, paymentMethod });
+  const html = generateOrderEmailTemplate({ orderId, items, amount, address, paymentMethod, pickupLocation });
 
   return await sendEmail({ to, subject, text, html });
 };

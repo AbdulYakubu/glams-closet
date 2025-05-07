@@ -6,28 +6,38 @@ const StatusBadge = ({ status }) => {
     Delivered: {
       bg: "bg-green-100 dark:bg-green-900/20",
       text: "text-green-700 dark:text-green-400",
-      icon: "✅"
+      icon: "✅",
     },
     Shipped: {
       bg: "bg-blue-100 dark:bg-blue-900/20",
       text: "text-blue-700 dark:text-blue-400",
-      icon: "🚚"
+      icon: "🚚",
     },
     Packing: {
       bg: "bg-yellow-100 dark:bg-yellow-900/20",
       text: "text-yellow-700 dark:text-yellow-400",
-      icon: "📦"
+      icon: "📦",
     },
     "Out for Delivery": {
       bg: "bg-orange-100 dark:bg-orange-900/20",
       text: "text-orange-700 dark:text-orange-400",
-      icon: "🏍️"
+      icon: "🏍️",
+    },
+    "Ready for Pickup": {
+      bg: "bg-purple-100 dark:bg-purple-900/20",
+      text: "text-purple-700 dark:text-purple-400",
+      icon: "🏬",
+    },
+    Cancelled: {
+      bg: "bg-red-100 dark:bg-red-900/20",
+      text: "text-red-700 dark:text-red-400",
+      icon: "❌",
     },
     default: {
       bg: "bg-gray-100 dark:bg-gray-700",
       text: "text-gray-700 dark:text-gray-300",
-      icon: "🔄"
-    }
+      icon: "🔄",
+    },
   };
 
   // Get the styles for the current status or use default

@@ -12,9 +12,8 @@ const ShopContextProvider = (props) => {
   const navigate = useNavigate();
 
   const CART_STORAGE_KEY = 'cart_items';
-  const WISHLIST_STORAGE_KEY = 'wishlist_items'; // New key for wishlist
+  const WISHLIST_STORAGE_KEY = 'wishlist_items';
 
-  // Function to load cart from localStorage
   const loadCartFromStorage = () => {
     try {
       const storedCart = localStorage.getItem(CART_STORAGE_KEY);
@@ -25,7 +24,6 @@ const ShopContextProvider = (props) => {
     }
   };
 
-  // Function to save cart to localStorage
   const saveCartToStorage = (cart) => {
     try {
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
@@ -34,7 +32,6 @@ const ShopContextProvider = (props) => {
     }
   };
 
-  // Function to load wishlist from localStorage
   const loadWishlistFromStorage = () => {
     try {
       const storedWishlist = localStorage.getItem(WISHLIST_STORAGE_KEY);
@@ -45,7 +42,6 @@ const ShopContextProvider = (props) => {
     }
   };
 
-  // Function to save wishlist to localStorage
   const saveWishlistToStorage = (wishlist) => {
     try {
       localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(wishlist));
@@ -60,7 +56,7 @@ const ShopContextProvider = (props) => {
   const [ShowSearch, setShowSearch] = useState(true);
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [cartItems, setCartItems] = useState(loadCartFromStorage());
-  const [wishlistItems, setWishlistItems] = useState(loadWishlistFromStorage()); // Initialize with localStorage
+  const [wishlistItems, setWishlistItems] = useState(loadWishlistFromStorage());
   const [userLocation, setUserLocation] = useState("");
 
   const shippingRates = {
@@ -74,7 +70,6 @@ const ShopContextProvider = (props) => {
     return `${currency}${numericPrice.toFixed(2)}`;
   };
 
-  // Sync cart and wishlist across tabs
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === CART_STORAGE_KEY) {
@@ -157,7 +152,7 @@ const ShopContextProvider = (props) => {
         updatedWishlist.splice(index, 1);
       }
 
-      saveWishlistToStorage(updatedWishlist); // Save to localStorage
+      saveWishlistToStorage(updatedWishlist);
       return updatedWishlist;
     });
 
@@ -242,7 +237,7 @@ const ShopContextProvider = (props) => {
         if (response.data.success) {
           const backendWishlist = response.data.wishlist || [];
           setWishlistItems(backendWishlist);
-          saveWishlistToStorage(backendWishlist); // Sync backend wishlist to localStorage
+          saveWishlistToStorage(backendWishlist);
         }
       } catch (error) {
         handleAuthError(error);
@@ -261,7 +256,7 @@ const ShopContextProvider = (props) => {
         if (response.data.success) {
           const backendCart = response.data.cartData || {};
           setCartItems(backendCart);
-          saveCartToStorage(backendCart); // Sync backend cart to localStorage
+          saveCartToStorage(backendCart);
         }
       } catch (error) {
         handleAuthError(error);
@@ -300,8 +295,8 @@ const ShopContextProvider = (props) => {
       localStorage.removeItem(CART_STORAGE_KEY);
     }
     
-    setWishlistItems([]); // Optionally keep wishlist in localStorage
-    localStorage.removeItem(WISHLIST_STORAGE_KEY); // Clear wishlist from localStorage on logout
+    setWishlistItems([]);
+    localStorage.removeItem(WISHLIST_STORAGE_KEY);
     
     navigate("/login");
     toast.info("Logged out successfully");
@@ -321,7 +316,7 @@ const ShopContextProvider = (props) => {
         return { success: false };
       }
 
-      const payload = { items, amount, address, email };
+      const payload = { items, amount, address, email, paymentMethod }; // Include paymentMethod
       const endpoint =
         paymentMethod === "Paystack"
           ? "/api/order/paystack"
@@ -338,7 +333,7 @@ const ShopContextProvider = (props) => {
         } else {
           toast.success("Order placed! Confirmation email sent.");
           setCartItems({});
-          saveCartToStorage({}); // Clear cart in localStorage
+          saveCartToStorage({});
           return { success: true, orderId: response.data.orderId };
         }
       } else {

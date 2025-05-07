@@ -56,21 +56,7 @@ const PlaceOrder = () => {
   const [errors, setErrors] = useState({});
   const [showConfirmation, setShowConfirmation] = useState(false);
 
-  // Debug re-renders
-  useEffect(() => {
-    {/*console.log("PlaceOrder re-rendered");
-    console.log("Token:", token ? "Present" : "Missing");
-    console.log("CartItems:", JSON.stringify(cartItems, null, 2));
-    console.log("Products:", JSON.stringify(products, null, 2));
-    console.log("FormData:", formData);*/}
-  }, [cartItems, products, token, formData]);
-
-  // Save form data to localStorage
-  useEffect(() => {
-    localStorage.setItem("checkoutFormData", JSON.stringify(formData));
-  }, [formData]);
-
-    // validateField to require email
+  // Validate field to require email
   const validateField = (name, value) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const phoneRegex = /^(?:\+233|0)[235]\d{8}$/;
@@ -89,7 +75,7 @@ const PlaceOrder = () => {
   };
 
   // Validate entire form
- const validateForm = useCallback(() => {
+  const validateForm = useCallback(() => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const phoneRegex = /^(?:\+233|0)[235]\d{8}$/;
 
@@ -107,7 +93,6 @@ const PlaceOrder = () => {
     setErrors(newErrors);
     const valid = Object.keys(newErrors).length === 0;
     setIsFormValid(valid);
-    // console.log("Form validation:", { isValid: valid, errors: newErrors });
     return valid;
   }, [formData]);
 
@@ -133,7 +118,6 @@ const PlaceOrder = () => {
   const prepareOrderItems = useMemo(() => {
     return () => {
       if (!cartItems || !products?.length) {
-        {/*console.error("Cart or product data missing", { cartItems, products });*/ }
         toast.error("Cart or product data is missing");
         return [];
       }
@@ -145,7 +129,6 @@ const PlaceOrder = () => {
           if (cartItems[productId][size] > 0) {
             const itemInfo = products.find((product) => product._id === productId);
             if (!itemInfo) {
-              {/*console.error(`Product not found for ID ${productId}`);*/ }
               toast.error(`Product ID ${productId} not found`);
               continue;
             }
@@ -161,10 +144,7 @@ const PlaceOrder = () => {
         }
       }
       if (!orderItems.length) {
-        {/*console.error("No valid items in cart");*/ }
         toast.error("No valid items in cart");
-      } else {
-        //toast.error("Prepared order items:", JSON.stringify(orderItems, null, 2));
       }
       return orderItems;
     };
@@ -173,34 +153,29 @@ const PlaceOrder = () => {
   const placeOrder = useCallback(
     async (method) => {
       const items = prepareOrderItems();
-      const amount = Number(getCartAmount()) + Number(delivery_charges);
+      const amount = method === "pickup" ? Number(getCartAmount()) : Number(getCartAmount()) + Number(delivery_charges);
 
       if (!items.length || !amount || isNaN(amount) || amount <= 0) {
-        //console.error("Invalid order data", { items, amount, cartItems, products });
         toast.error("Cart is empty or amount is invalid");
         throw new Error("Invalid cart data");
       }
 
       if (!token) {
-        console.error("No token provided");
         toast.error("Please login to place an order");
         navigate("/login");
         setPaymentLoading(false);
         return;
       }
 
-     const payload = {
+      const payload = {
         email: formData.email,
         address: formData,
         items,
         amount,
+        paymentMethod: method === "paystack" ? "Paystack" : 
+                      method === "cod" ? "COD" : 
+                      "Pickup"
       };
-
-      console.log("Sending order request:", {
-        url: `${backendUrl}/api/order/${method === "paystack" ? "paystack" : "place"}`,
-        payload: JSON.stringify(payload, null, 2),
-        headers: { Authorization: `Bearer ${token}` },
-      });
 
       try {
         const orderResponse = await axios.post(
@@ -208,8 +183,6 @@ const PlaceOrder = () => {
           payload,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-
-        {/*console.log("Order response:", JSON.stringify(orderResponse.data, null, 2));*/ }
 
         if (method === "paystack") {
           if (orderResponse.data.success && orderResponse.data.authorization_url) {
@@ -225,12 +198,7 @@ const PlaceOrder = () => {
           navigate("/orders");
         }
       } catch (error) {
-        console.error("Order Error:", {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status,
-          requestPayload: JSON.stringify(payload, null, 2),
-        });
+        console.error("Order Error:", error);
         if (error.response?.status === 401) {
           toast.error("Session expired. Please login again.");
           navigate("/login");
@@ -256,15 +224,12 @@ const PlaceOrder = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    //console.log("Form submitted, validating...");
     if (!validateForm()) {
-      console.error("Form validation failed", errors);
       toast.error("Please correct the form errors");
       return;
     }
 
     if (!token) {
-      console.error("No token found");
       toast.error("Please login to place an order");
       navigate("/login");
       return;
@@ -279,7 +244,9 @@ const PlaceOrder = () => {
 
     try {
       const items = prepareOrderItems();
-      const amount = Number(getCartAmount()) + Number(delivery_charges);
+      const amount = paymentMethod === "pickup" 
+        ? Number(getCartAmount()) 
+        : Number(getCartAmount()) + Number(delivery_charges);
 
       if (!items.length || !amount || isNaN(amount) || amount <= 0) {
         toast.error("Cart is empty or amount is invalid");
@@ -292,11 +259,13 @@ const PlaceOrder = () => {
         amount,
         address: formData,
         email: formData.email,
-        paymentMethod: paymentMethod === "cod" ? "COD" : "Paystack",
+        paymentMethod: paymentMethod === "paystack" ? "Paystack" : 
+                     paymentMethod === "cod" ? "COD" : 
+                     "Pickup",
       });
 
       if (result.success) {
-        localStorage.removeItem("checkoutFormData", CART_STORAGE_KEY);
+        localStorage.removeItem("checkoutFormData");
         setCartItems({});
         if (!result.isRedirect) {
           navigate("/orders");
@@ -313,6 +282,24 @@ const PlaceOrder = () => {
     const numericPrice = typeof price === "string" ? parseFloat(price) : price;
     return isNaN(numericPrice) ? "0.00" : numericPrice.toFixed(2);
   };
+
+  // Pickup location information
+  const pickupInfo = (
+    <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+      <h4 className="font-medium text-blue-800 dark:text-blue-200 flex items-center">
+        <FaHome className="mr-2" /> Pickup Location
+      </h4>
+      <p className="mt-2 text-sm text-blue-700 dark:text-blue-300">
+        Chief Butcher 
+      </p>
+      <p className="text-sm text-blue-700 dark:text-blue-300">
+        Open: Mon-Fri 9am-6pm, Sat 10am-4pm
+      </p>
+      <p className="mt-2 text-xs text-blue-600 dark:text-blue-400">
+        Please bring your order confirmation and valid ID when picking up.
+      </p>
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-primary dark:bg-gray-900">
@@ -442,7 +429,7 @@ const PlaceOrder = () => {
                   <div className="md:col-span-2 mt-4">
                     <h4 className="flex items-center text-lg font-semibold mb-4 text-gray-700 dark:text-gray-300">
                       <FaMapMarkerAlt className="mr-2 text-indigo-600 dark:text-indigo-400" />
-                      Delivery Address
+                      {paymentMethod === "pickup" ? "Contact Address" : "Delivery Address"}
                     </h4>
                   </div>
                   <div className="md:col-span-2">
@@ -453,14 +440,15 @@ const PlaceOrder = () => {
                       Street Address
                     </label>
                     <div className="relative">          
-                     <input
-                      id="street"
-                      type="text"
-                      onChange={onChangeHandler}
-                      value={formData.street}
-                      name="street"
-                      className="w-full pl-10 px-4 py-3 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 dark:focus:ring-indigo-500"
-                    />
+                      <input
+                        id="street"
+                        type="text"
+                        onChange={onChangeHandler}
+                        value={formData.street}
+                        name="street"
+                        className="w-full pl-10 px-4 py-3 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 dark:focus:ring-indigo-500"
+                      />
+                    </div>
                   </div>
                   <div>
                     <label
@@ -558,17 +546,18 @@ const PlaceOrder = () => {
             </div>
             {/* Order Summary & Payment */}
             <div className="flex-1">
-              <CartTotal />
+              <CartTotal showDelivery={paymentMethod !== "pickup"} />
               <div className="mt-8 rounded-lg shadow-md p-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                 <h3 className="flex items-center text-xl font-bold mb-6 text-gray-700 dark:text-gray-300">
                   <MdPayment className="mr-2 text-indigo-600 dark:text-indigo-400" />
                   Payment <span className="text-indigo-600 dark:text-indigo-400">Method</span>
                 </h3>
                 <div className="space-y-4 mb-6" role="radiogroup" aria-labelledby="payment-method-label">
+                  {/* Paystack Option */}
                   <motion.div
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className={`p-4 rounded-lg border-2 cursor-particle transition-all ${
+                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
                       paymentMethod === "paystack"
                         ? "border-indigo-600 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20"
                         : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
@@ -602,6 +591,8 @@ const PlaceOrder = () => {
                       )}
                     </div>
                   </motion.div>
+
+                  {/* Cash on Delivery Option */}
                   <motion.div
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
@@ -634,20 +625,66 @@ const PlaceOrder = () => {
                       </div>
                       {paymentMethod === "cod" && (
                         <div className="w-5 h-5 rounded-full bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center">
-                          <div className="w-2 h-2 rounded-full bg-white dark:gray-50"></div>
+                          <div className="w-2 h-2 rounded-full bg-white"></div>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+
+                  {/* Cash on Pickup Option */}
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                      paymentMethod === "pickup"
+                        ? "border-indigo-600 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20"
+                        : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                    }`}
+                    onClick={() => setPaymentMethod("pickup")}
+                    role="radio"
+                    aria-checked={paymentMethod === "pickup"}
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === "Enter" && setPaymentMethod("pickup")}
+                  >
+                    <div className="flex items-center">
+                      <div
+                        className={`p-2 rounded-full mr-3 ${
+                          paymentMethod === "pickup"
+                            ? "bg-indigo-600 dark:bg-indigo-500 text-white"
+                            : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                        }`}
+                      >
+                        <FaHome />
+                      </div>
+                      <div className="flex-grow">
+                        <h4 className="font-medium text-gray-800 dark:text-gray-300">Cash on Pickup</h4>
+                        <p className="text-sm mt-1 text-gray-600 dark:text-gray-400">
+                          Pay when you pick up from our store
+                        </p>
+                      </div>
+                      {paymentMethod === "pickup" && (
+                        <div className="w-5 h-5 rounded-full bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center">
+                          <div className="w-2 h-2 rounded-full bg-white"></div>
                         </div>
                       )}
                     </div>
                   </motion.div>
                 </div>
+
+                {/* Show pickup info when that option is selected */}
+                {paymentMethod === "pickup" && pickupInfo}
+
                 <div className="mt-6 p-4 rounded-md flex items-start bg-gray-100 dark:bg-gray-700">
                   <div className="text-indigo-600 dark:text-indigo-400 mt-1 mr-3 flex-shrink-0">🔒</div>
                   <p className="text-sm text-gray-700 dark:text-gray-300">
                     {paymentMethod === "paystack"
                       ? "Your payment information is processed securely via Paystack. We don't store your payment details."
-                      : "You'll pay the delivery agent when you receive your order. An additional verification might be required."}
+                      : paymentMethod === "cod"
+                      ? "You'll pay the delivery agent when you receive your order. An additional verification might be required."
+                      : "You'll pay when you pick up your order from our store. Please bring your order confirmation."}
                   </p>
                 </div>
+
                 <motion.button
                   type="submit"
                   className={`w-full mt-6 py-3 px-4 rounded-md font-medium text-white transition-colors ${
@@ -682,19 +719,24 @@ const PlaceOrder = () => {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                      {paymentMethod === "paystack" ? "Processing Payment..." : "Placing Order..."}
+                      {paymentMethod === "paystack" 
+                        ? "Processing Payment..." 
+                        : paymentMethod === "cod"
+                        ? "Placing Order..."
+                        : "Confirming Pickup..."}
                     </span>
                   ) : (
                     <>
                       {paymentMethod === "paystack"
                         ? `Pay Securely - ${currency}${formatPrice(getCartAmount() + delivery_charges)}`
-                        : `Place Order (COD) - ${currency}${formatPrice(getCartAmount() + delivery_charges)}`}
+                        : paymentMethod === "cod"
+                        ? `Place Order (COD) - ${currency}${formatPrice(getCartAmount() + delivery_charges)}`
+                        : `Confirm Pickup - ${currency}${formatPrice(getCartAmount())}`}
                     </>
                   )}
                 </motion.button>
-                </div>
-                </div>
               </div>
+            </div>
           </div>
         </form>
       </div>
@@ -703,7 +745,9 @@ const PlaceOrder = () => {
         onClose={() => setShowConfirmation(false)}
         onConfirm={confirmOrder}
         paymentMethod={paymentMethod}
-        amount={formatPrice(getCartAmount() + delivery_charges)}
+        amount={paymentMethod === "pickup" 
+          ? formatPrice(getCartAmount()) 
+          : formatPrice(getCartAmount() + delivery_charges)}
         currency={currency}
       />
       <Footer />

@@ -1,4 +1,3 @@
-
 import mongoose from "mongoose";
 
 const orderSchema = new mongoose.Schema({
@@ -7,7 +6,6 @@ const orderSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
-  // Added email field to store the customer's email for order confirmation
   email: {
     type: String,
     required: false, // Optional to handle existing orders without email
@@ -83,7 +81,7 @@ const orderSchema = new mongoose.Schema({
   paymentMethod: {
     type: String,
     required: true,
-    enum: ["COD", "Paystack"],
+    enum: ["COD", "Paystack", "Pickup"], // Added "Pickup"
   },
   payment: {
     type: Boolean,
@@ -101,7 +99,17 @@ const orderSchema = new mongoose.Schema({
   status: {
     type: String,
     default: "Packing",
-    enum: ["Packing", "Shipped", "Delivered", "Cancelled"],
+    enum: ["Packing", "Shipped", "Delivered", "Cancelled", "Ready for Pickup"], // Added "Ready for Pickup"
+  },
+  pickupLocation: {
+    name: {
+      type: String,
+      default: "",
+    },
+    hours: {
+      type: String,
+      default: "",
+    },
   },
   date: {
     type: Date,

@@ -58,7 +58,7 @@ const Orders = ({ token }) => {
 
   return (
     <div className="px-4 sm:px-8 mt-6 sm:mt-12">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">My Orders</h2>
+      <h2 className="text-2xl font-bold mb-6 text-gray-800">All Orders</h2>
 
       <div className="flex flex-col gap-6">
         {orders.map((order) => (
@@ -112,16 +112,40 @@ const Orders = ({ token }) => {
               </div>
 
               <div>
-                <p className="text-sm font-medium text-gray-700 mb-1">Shipping Address</p>
-                <p className="text-sm text-gray-600">
-                  {order.address.firstName} {order.address.lastName}
+                <p className="text-sm font-medium text-gray-700 mb-1">
+                  {order.paymentMethod === "Pickup" ? "Pickup Details" : "Shipping Address"}
                 </p>
-                <p className="text-sm text-gray-600">
-                  {order.address.street}, {order.address.city},{" "}
-                  {order.address.state || ""}, {order.address.country},{" "}
-                  {order.address.digitalAddress || ""}
-                </p>
-                <p className="text-sm text-gray-600">📞 {order.address.phone}</p>
+                {order.paymentMethod === "Pickup" ? (
+                  <>
+                    <p className="text-sm text-gray-600">
+                      <strong>Location:</strong> {order.pickupLocation?.name || "Chief Butcher"}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      <strong>Hours:</strong>{" "}
+                      {order.pickupLocation?.hours || "Mon-Fri 9am-6pm, Sat 10am-4pm"}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      <strong>Contact:</strong> {order.address.firstName} {order.address.lastName}
+                    </p>
+                    <p className="text-sm text-gray-600">📞 {order.address.phone}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-gray-600">
+                      {order.address.firstName} {order.address.lastName}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {order.address.street ? `${order.address.street}, ` : ""}
+                      {order.address.city}
+                      {order.address.state ? `, ${order.address.state}` : ""},{" "}
+                      {order.address.country}
+                      {order.address.digitalAddress
+                        ? `, ${order.address.digitalAddress}`
+                        : ""}
+                    </p>
+                    <p className="text-sm text-gray-600">📞 {order.address.phone}</p>
+                  </>
+                )}
               </div>
             </div>
 
@@ -136,10 +160,14 @@ const Orders = ({ token }) => {
                   className={`px-2 py-1 rounded-full text-xs font-medium ${
                     order.status === "Delivered"
                       ? "bg-green-100 text-green-700"
-                      : order.status === "Out for Delivery"
-                      ? "bg-yellow-100 text-yellow-700"
                       : order.status === "Shipped"
                       ? "bg-blue-100 text-blue-700"
+                      : order.status === "Packing"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : order.status === "Ready for Pickup"
+                      ? "bg-purple-100 text-purple-700"
+                      : order.status === "Cancelled"
+                      ? "bg-red-100 text-red-700"
                       : "bg-slate-100 text-slate-700"
                   }`}
                 >
@@ -153,8 +181,9 @@ const Orders = ({ token }) => {
                 >
                   <option value="Packing">Packing</option>
                   <option value="Shipped">Shipped</option>
-                  <option value="Out for Delivery">Out for Delivery</option>
                   <option value="Delivered">Delivered</option>
+                  <option value="Cancelled">Cancelled</option>
+                  <option value="Ready for Pickup">Ready for Pickup</option>
                 </select>
               </div>
             </div>
